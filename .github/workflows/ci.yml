@@ -31,6 +31,8 @@ jobs:
       - run: npm run type-check
       - run: npm run lint
       - run: npm test
+      - name: The published packages pack cleanly
+        run: npm pack --dry-run -w packages/manifest -w packages/tab-bridge -w packages/studio-kit
       - name: npm audit (production dependencies, high and critical)
         run: npm audit --omit=dev --audit-level=high
 

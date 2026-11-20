@@ -1,0 +1,55 @@
+name: Publish to npm
+
+# Publishes @canopi-sdk/manifest, @canopi-sdk/tab-bridge and @canopi-sdk/studio-kit when a
+# `v<version>` tag is pushed. Uses npm trusted publishing (OIDC): no npm token is stored in this
+# repo, and npm adds a provenance attestation linking each version to this workflow run.
+# Setup and the release steps: docs/RELEASING.md.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write   # npm trusted publishing
+
+concurrency:
+  group: npm-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: npm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+      # Trusted publishing needs npm 11.5.1 or later.
+      - run: npm install -g npm@11.21.2 >/dev/null && npm -v
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - run: npm run type-check
+      - run: npm run lint
+      - run: npm test
+      - name: Tag matches every package version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          for p in manifest tab-bridge studio-kit; do
+            v=$(node -p "require('./packages/$p/package.json').version")
+            [ "v$v" = "$TAG" ] || { echo "packages/$p is $v but the tag is $TAG" >&2; exit 1; }
+          done
+      # Dependencies first: studio-kit depends on manifest and tab-bridge. A version that is
+      # already on npm is skipped, so a failed run can be re-run.
+      - name: Publish
+        run: |
+          for p in manifest tab-bridge studio-kit; do
+            name=$(node -p "require('./packages/$p/package.json').name")
+            v=$(node -p "require('./packages/$p/package.json').version")
+            if npm view "$name@$v" version >/dev/null 2>&1; then echo "$name@$v is already on npm, skipping"; continue; fi
+            npm publish -w "packages/$p"
+          done
