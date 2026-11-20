@@ -1,6 +1,6 @@
 {
   "name": "@canopi-sdk/tab-bridge",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Client for the canopi.tab bridge v1: what a sandboxed tablication imports to talk to Canopi",
   "license": "Apache-2.0",
   "repository": {
