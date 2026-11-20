@@ -1,6 +1,6 @@
 {
   "name": "@canopi-sdk/manifest",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Canopi module manifest v2 (smart tags, tablications, overlay apps): JSON Schema, types, validator",
   "license": "Apache-2.0",
   "repository": {

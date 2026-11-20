@@ -1,6 +1,6 @@
 {
   "name": "@canopi-sdk/studio-kit",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Canopi Studio: StudioProject schema and validator, component catalogue, sidebar renderers, data sources, mock CanopiTab, module scaffold generator",
   "license": "Apache-2.0",
   "repository": {
@@ -39,8 +39,8 @@
     "gen:runtime": "node scripts/gen-runtime.mjs"
   },
   "dependencies": {
-    "@canopi-sdk/manifest": "0.2.0",
-    "@canopi-sdk/tab-bridge": "0.2.0",
+    "@canopi-sdk/manifest": "0.2.1",
+    "@canopi-sdk/tab-bridge": "0.2.1",
     "ajv": "^8.17.1"
   },
   "devDependencies": {
