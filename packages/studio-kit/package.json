@@ -2,18 +2,36 @@
   "name": "@canopi-sdk/studio-kit",
   "version": "0.2.0",
   "description": "Canopi Studio: StudioProject schema and validator, component catalogue, sidebar renderers, data sources, mock CanopiTab, module scaffold generator",
-  "private": true,
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bridgit-DAO/canopi-sdk.git",
+    "directory": "packages/studio-kit"
+  },
+  "homepage": "https://github.com/Bridgit-DAO/canopi-sdk/tree/master/packages/studio-kit#readme",
+  "bugs": {
+    "url": "https://github.com/Bridgit-DAO/canopi-sdk/issues"
+  },
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
-    "./browser": { "types": "./dist/browser.d.ts", "import": "./dist/browser.js" },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./browser": {
+      "types": "./dist/browser.d.ts",
+      "import": "./dist/browser.js"
+    },
     "./sample-project.json": "./fixtures/sample-project.json"
   },
-  "files": ["dist", "fixtures", "README.md"],
+  "files": [
+    "dist",
+    "fixtures",
+    "README.md"
+  ],
   "sideEffects": false,
   "scripts": {
     "build": "tsc -p tsconfig.json && node scripts/bundle.mjs",
@@ -27,5 +45,8 @@
   },
   "devDependencies": {
     "esbuild": "^0.28.2"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

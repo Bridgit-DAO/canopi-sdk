@@ -34,7 +34,7 @@ Bridge limits worth knowing (the Canopi host enforces them): `storage.set` keys 
 
 To run Canopi Studio locally with `studio-kit`, use the [`canopi-studio`](./.claude/skills/canopi-studio/) skill.
 
-Every package builds to ES modules plus type declarations in `dist/`, with an `exports` field, and has **no side effects at import**: no globals, listeners or timers. All packages are licensed Apache-2.0 and stay `private` (not published to npm).
+Every package builds to ES modules plus type declarations in `dist/`, with an `exports` field, and has **no side effects at import**: no globals, listeners or timers. All packages are licensed Apache-2.0. `@canopi-sdk/manifest`, `@canopi-sdk/tab-bridge` and `@canopi-sdk/studio-kit` are published to npm (see [`docs/RELEASING.md`](./docs/RELEASING.md)); the other packages stay `private`.
 
 ```bash
 npm ci            # Node 22, npm 10.9.9 (what CI and the servers run)

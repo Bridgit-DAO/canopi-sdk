@@ -2,14 +2,36 @@
   "name": "@canopi-sdk/tab-bridge",
   "version": "0.2.0",
   "description": "Client for the canopi.tab bridge v1: what a sandboxed tablication imports to talk to Canopi",
-  "private": true,
   "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bridgit-DAO/canopi-sdk.git",
+    "directory": "packages/tab-bridge"
+  },
+  "homepage": "https://github.com/Bridgit-DAO/canopi-sdk/tree/master/packages/tab-bridge#readme",
+  "bugs": {
+    "url": "https://github.com/Bridgit-DAO/canopi-sdk/issues"
+  },
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
-  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
-  "files": ["dist", "README.md"],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "sideEffects": false,
-  "scripts": { "build": "tsc -p tsconfig.json", "type-check": "tsc --noEmit -p tsconfig.json" }
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "type-check": "tsc --noEmit -p tsconfig.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }
