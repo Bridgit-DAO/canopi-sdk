@@ -1,13 +1,16 @@
 name: Publish to npm
 
-# Publishes @canopi-sdk/manifest, @canopi-sdk/tab-bridge and @canopi-sdk/studio-kit when a
-# `v<version>` tag is pushed. Uses npm trusted publishing (OIDC): no npm token is stored in this
-# repo, and npm adds a provenance attestation linking each version to this workflow run.
-# Setup and the release steps: docs/RELEASING.md.
+# Two kinds of tag, one workflow (npm's trusted publishers point at this file):
+# - `v<version>` publishes @canopi-sdk/manifest, @canopi-sdk/tab-bridge and @canopi-sdk/studio-kit,
+#   which share one version number;
+# - `cli-v<version>` publishes @canopi-sdk/cli, which has its own version number.
+# Uses npm trusted publishing (OIDC): no npm token is stored in this repo, and npm adds a provenance
+# attestation linking each version to this workflow run. Setup and the release steps:
+# docs/RELEASING.md.
 
 on:
   push:
-    tags: ['v*']
+    tags: ['v*', 'cli-v*']
 
 permissions:
   contents: read
@@ -35,19 +38,25 @@ jobs:
       - run: npm run type-check
       - run: npm run lint
       - run: npm test
-      - name: Tag matches every package version
+      - name: Packages for this tag, and the tag matches their version
         env:
           TAG: ${{ github.ref_name }}
         run: |
-          for p in manifest tab-bridge studio-kit; do
+          case "$TAG" in
+            cli-v*) pkgs="cli"; want="${TAG#cli-v}" ;;
+            v*)     pkgs="manifest tab-bridge studio-kit"; want="${TAG#v}" ;;
+            *)      echo "unexpected tag $TAG" >&2; exit 1 ;;
+          esac
+          for p in $pkgs; do
             v=$(node -p "require('./packages/$p/package.json').version")
-            [ "v$v" = "$TAG" ] || { echo "packages/$p is $v but the tag is $TAG" >&2; exit 1; }
+            [ "$v" = "$want" ] || { echo "packages/$p is $v but the tag is $TAG" >&2; exit 1; }
           done
-      # Dependencies first: studio-kit depends on manifest and tab-bridge. A version that is
-      # already on npm is skipped, so a failed run can be re-run.
+          echo "PKGS=$pkgs" >> "$GITHUB_ENV"
+      # In order: studio-kit depends on manifest and tab-bridge. A version that is already on npm
+      # is skipped, so a failed run can be re-run.
       - name: Publish
         run: |
-          for p in manifest tab-bridge studio-kit; do
+          for p in $PKGS; do
             name=$(node -p "require('./packages/$p/package.json').name")
             v=$(node -p "require('./packages/$p/package.json').version")
             if npm view "$name@$v" version >/dev/null 2>&1; then echo "$name@$v is already on npm, skipping"; continue; fi
