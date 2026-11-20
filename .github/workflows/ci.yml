@@ -1,0 +1,60 @@
+name: CI
+
+# Audit F8: the SDK had no tests and lint/type-check failed. Every PR and push to master runs
+# build, type-check, lint, tests, a secret scan of the new commits, npm audit (high+) and an
+# npm ci check with the servers' npm (Node 22 / npm 10.9.9).
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+env:
+  GITLEAKS_VERSION: 8.30.1
+  GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install -g npm@10.9.9 >/dev/null && npm -v
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - run: npm run type-check
+      - run: npm run lint
+      - run: npm test
+      - name: npm audit (production dependencies, high and critical)
+        run: npm audit --omit=dev --audit-level=high
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install gitleaks (pinned, checksum verified)
+        run: |
+          curl -fsSL -o gl.tgz "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  gl.tgz" | sha256sum -c -
+          tar xzf gl.tgz gitleaks && sudo mv gitleaks /usr/local/bin/
+      - name: Scan the new commits
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.sha }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then RANGE="$PR_BASE..$PR_HEAD";
+          elif [ -z "$PUSH_BEFORE" ] || [ "$PUSH_BEFORE" = "0000000000000000000000000000000000000000" ]; then RANGE="-1 $PUSH_AFTER";
+          else RANGE="$PUSH_BEFORE..$PUSH_AFTER"; fi
+          gitleaks git . --no-banner --redact --log-opts="$RANGE" --exit-code 1

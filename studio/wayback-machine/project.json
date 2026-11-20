@@ -1,0 +1,1228 @@
+{
+  "schemaVersion": 1,
+  "id": "9f458443-da82-4384-8d81-7b99fecefbce",
+  "slug": "wayback-machine",
+  "name": "Wayback Machine",
+  "stage": "scaffold",
+  "source": {
+    "url": "https://web.archive.org/",
+    "notes": "Trial run of the canopi-studio skill (no human in the loop; the agent made the choices at the stops). Goal: show readers whether the page they are on is archived, and let them cite archived copies.",
+    "extracted": {
+      "title": "Wayback Machine (Internet Archive)",
+      "summary": "The Wayback Machine keeps more than two decades of captures of public web pages. Its Availability API answers, for any URL, whether an archived copy exists and which capture is closest to a given date; the CDX server lists every capture.",
+      "audience": "Readers, researchers, journalists and Wikipedia editors who need to know whether a page has been archived, and to cite a copy that will not rot.",
+      "entities": [
+        {
+          "name": "Snapshot",
+          "description": "One capture of a URL at a moment in time.",
+          "fields": [
+            "url",
+            "timestamp",
+            "status",
+            "available"
+          ]
+        },
+        {
+          "name": "Capture history",
+          "description": "All captures of a URL, from the CDX server.",
+          "fields": [
+            "timestamp",
+            "statuscode",
+            "digest"
+          ]
+        }
+      ],
+      "pages": [
+        {
+          "urlPattern": "https://web.archive.org/web/<timestamp>/<url>",
+          "purpose": "An archived snapshot of a page."
+        },
+        {
+          "urlPattern": "https://web.archive.org/web/*/<url>",
+          "purpose": "Calendar of every capture of a URL."
+        }
+      ],
+      "apiHints": [
+        {
+          "evidence": "https://archive.org/help/wayback_api.php documents GET https://archive.org/wayback/available?url=<url>[&timestamp=YYYYMMDDhhmmss] and its response { url, archived_snapshots: { closest: { available, url, timestamp, status } } }, or { archived_snapshots: {} } when not archived.",
+          "guess": "Latest and oldest snapshot of the page the reader is on, from pageUrl."
+        },
+        {
+          "evidence": "Probed 2026-11-14: OPTIONS https://archive.org/wayback/available with Origin: null answered 200, access-control-allow-origin: null; GET answered access-control-allow-origin: * (and allow-credentials: true; no credentials are sent).",
+          "guess": "A tablication can call it directly; going live is a config change."
+        },
+        {
+          "evidence": "Seen live 2026-11-14: for a never-archived URL the API answered { archived_snapshots: {}, error: { code: \"timeout\", ... } } after ~5 s.",
+          "guess": "Show an empty state, and expect slow answers for unknown URLs."
+        },
+        {
+          "evidence": "The CDX server (https://web.archive.org/cdx/search/cdx?url=...&output=json) answers rows as arrays with a header row; OPTIONS with Origin: null answered 405.",
+          "guess": "Captures per year would need a transform the sidebar kit cannot do (it binds objects); the shape used in the demo is invented."
+        }
+      ]
+    }
+  },
+  "ideas": [
+    {
+      "id": "idea_1",
+      "kind": "sidebar",
+      "title": "Is this page archived?",
+      "pitch": "Open the Wayback tab on any page and see straight away whether the Internet Archive has it: the latest capture, the first capture, and how often it has been saved over the years, each one link away.",
+      "userStory": "As a researcher reading a page I may need to cite, I want to know whether a copy is safe in the Wayback Machine without leaving the page.",
+      "whereItAppears": "Sidebar tab on every page; the page is looked up by its URL (pageUrl).",
+      "triggers": [
+        {
+          "type": "page"
+        }
+      ],
+      "dataNeeded": [
+        "latest snapshot of the page",
+        "oldest snapshot of the page",
+        "captures per year"
+      ],
+      "selected": true
+    },
+    {
+      "id": "idea_2",
+      "kind": "smart-tag",
+      "title": "Archived citation",
+      "pitch": "Select a claim and attach the archived copy that backs it. Everyone who reads the page later sees the citation pill, and the evidence still opens when the original link has rotted.",
+      "userStory": "As a Wikipedia editor or journalist, I want the archived source pinned to the sentence it supports so the record survives the original site.",
+      "whereItAppears": "On a text selection of 20+ characters, or on a link the person chooses to tag.",
+      "triggers": [
+        {
+          "type": "selection",
+          "minChars": 20
+        },
+        {
+          "type": "link"
+        }
+      ],
+      "dataNeeded": [
+        "archived snapshot URL",
+        "original URL",
+        "capture timestamp",
+        "status of the original (live, changed, gone)",
+        "why it matters"
+      ],
+      "selected": true
+    },
+    {
+      "id": "idea_3",
+      "kind": "both",
+      "title": "Dead-link rescue",
+      "pitch": "A pill on every dead link that points at its archived copy. Honest caveat: a tab cannot see the page's links and smart tags cannot check URLs, so this only works for links people tag by hand.",
+      "userStory": "As a reader, I want a working copy when a link in an article is dead.",
+      "whereItAppears": "On links (manual tagging only; automatic detection is not something the platform offers).",
+      "triggers": [
+        {
+          "type": "link"
+        }
+      ],
+      "dataNeeded": [
+        "link target",
+        "closest snapshot"
+      ],
+      "selected": false
+    }
+  ],
+  "components": [
+    {
+      "id": "cmp_header",
+      "ideaId": "idea_1",
+      "surface": "sidebar",
+      "type": "header",
+      "title": "Wayback Machine",
+      "purpose": "Say what the tab is for.",
+      "binding": null,
+      "props": {
+        "title": "Wayback Machine",
+        "subtitle": "Archived copies of the page you are on"
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_latest",
+      "ideaId": "idea_1",
+      "surface": "sidebar",
+      "type": "detail",
+      "title": "Latest capture",
+      "purpose": "When the page was last saved, and the HTTP status the crawler saw.",
+      "binding": {
+        "sourceId": "src_latest",
+        "path": "$.archived_snapshots.closest"
+      },
+      "props": {
+        "fields": [
+          {
+            "field": "timestamp",
+            "label": "Captured"
+          },
+          {
+            "field": "status",
+            "label": "HTTP status"
+          }
+        ],
+        "emptyText": "Not in the Wayback Machine yet."
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_latest_open",
+      "ideaId": "idea_1",
+      "surface": "sidebar",
+      "type": "action",
+      "title": "",
+      "purpose": "Open the latest capture.",
+      "binding": {
+        "sourceId": "src_latest",
+        "path": "$.archived_snapshots.closest"
+      },
+      "props": {
+        "label": "Open the latest capture",
+        "kind": "link",
+        "urlField": "url"
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_oldest",
+      "ideaId": "idea_1",
+      "surface": "sidebar",
+      "type": "detail",
+      "title": "First capture",
+      "purpose": "How far back the record goes.",
+      "binding": {
+        "sourceId": "src_oldest",
+        "path": "$.archived_snapshots.closest"
+      },
+      "props": {
+        "fields": [
+          {
+            "field": "timestamp",
+            "label": "Captured"
+          },
+          {
+            "field": "status",
+            "label": "HTTP status"
+          }
+        ],
+        "emptyText": "No captures yet."
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_oldest_open",
+      "ideaId": "idea_1",
+      "surface": "sidebar",
+      "type": "action",
+      "title": "",
+      "purpose": "Open the first capture.",
+      "binding": {
+        "sourceId": "src_oldest",
+        "path": "$.archived_snapshots.closest"
+      },
+      "props": {
+        "label": "Open the first capture",
+        "kind": "link",
+        "urlField": "url"
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_total",
+      "ideaId": "idea_1",
+      "surface": "sidebar",
+      "type": "stat",
+      "title": "Captures",
+      "purpose": "How many times the page has been saved.",
+      "binding": {
+        "sourceId": "src_history",
+        "path": "$.years[*]"
+      },
+      "props": {
+        "label": "Times this page was saved",
+        "field": "captures",
+        "aggregate": "sum",
+        "format": "number"
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_history",
+      "ideaId": "idea_1",
+      "surface": "sidebar",
+      "type": "sparkline",
+      "title": "Captures per year",
+      "purpose": "Is the page being watched more or less over time?",
+      "binding": {
+        "sourceId": "src_history",
+        "path": "$.years[*]"
+      },
+      "props": {
+        "field": "captures",
+        "label": "Captures this year",
+        "format": "number"
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_ask",
+      "ideaId": "idea_1",
+      "surface": "sidebar",
+      "type": "ask-deepi",
+      "title": "Ask Deepi",
+      "purpose": "Questions about the page's history.",
+      "binding": null,
+      "props": {},
+      "status": "rejected",
+      "feedback": "Deepi is not connected in a demo; keep the tab about the archive."
+    },
+    {
+      "id": "cmp_cite_form",
+      "ideaId": "idea_2",
+      "surface": "sidebar",
+      "type": "form",
+      "title": "Cite an archived copy",
+      "purpose": "Open the composer for an archived-citation tag on this page.",
+      "binding": null,
+      "props": {
+        "fields": [
+          {
+            "name": "archiveUrl",
+            "label": "Archived copy (web.archive.org link)",
+            "type": "text",
+            "required": true
+          },
+          {
+            "name": "status",
+            "label": "The original is",
+            "type": "select",
+            "options": [
+              "live",
+              "changed",
+              "gone"
+            ],
+            "required": true
+          },
+          {
+            "name": "note",
+            "label": "Why it matters",
+            "type": "textarea",
+            "required": true
+          }
+        ],
+        "submitLabel": "Cite an archived copy…",
+        "composeTagType": "archived-citation"
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_citations",
+      "ideaId": "idea_2",
+      "surface": "sidebar",
+      "type": "tag-feed",
+      "title": "Archived citations here",
+      "purpose": "What people already cited on this page.",
+      "binding": null,
+      "props": {
+        "tagType": "archived-citation",
+        "limit": 5,
+        "emptyText": "No archived citations on this page yet."
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_cite_status",
+      "ideaId": "idea_2",
+      "surface": "smart-tag",
+      "type": "badge",
+      "title": "Original is",
+      "purpose": "Live, changed or gone.",
+      "binding": null,
+      "props": {
+        "field": "status"
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_cite_note",
+      "ideaId": "idea_2",
+      "surface": "smart-tag",
+      "type": "text",
+      "title": "Why it matters",
+      "purpose": "The citer's reason.",
+      "binding": null,
+      "props": {
+        "field": "note",
+        "label": "Why it matters"
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_cite_link",
+      "ideaId": "idea_2",
+      "surface": "smart-tag",
+      "type": "link",
+      "title": "Archived copy",
+      "purpose": "Open the snapshot.",
+      "binding": null,
+      "props": {
+        "field": "archiveUrl",
+        "label": "Open the archived copy"
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_cite_kv",
+      "ideaId": "idea_2",
+      "surface": "smart-tag",
+      "type": "kv",
+      "title": "Details",
+      "purpose": "Original URL and capture time.",
+      "binding": null,
+      "props": {
+        "fields": [
+          "originalUrl",
+          "capturedAt"
+        ]
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_cite_author",
+      "ideaId": "idea_2",
+      "surface": "smart-tag",
+      "type": "author",
+      "title": "Cited by",
+      "purpose": "Who attached it.",
+      "binding": null,
+      "props": {},
+      "status": "accepted",
+      "feedback": ""
+    }
+  ],
+  "dataSources": [
+    {
+      "id": "src_latest",
+      "name": "Latest snapshot of this page",
+      "kind": "rest",
+      "mode": "mock",
+      "confidence": "documented",
+      "evidence": "https://archive.org/help/wayback_api.php documents GET /wayback/available?url=<url>[&timestamp=] and this response shape. Fixtures are real responses fetched 2026-11-14. CORS probed 2026-11-14: OPTIONS with Origin: null -> access-control-allow-origin: null; GET -> *.",
+      "request": {
+        "method": "GET",
+        "urlTemplate": "https://archive.org/wayback/available?url={pageUrl}",
+        "auth": "none"
+      },
+      "schema": {
+        "type": "object",
+        "required": [
+          "archived_snapshots"
+        ],
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          },
+          "archived_snapshots": {
+            "type": "object",
+            "properties": {
+              "closest": {
+                "type": "object",
+                "required": [
+                  "available",
+                  "url",
+                  "timestamp",
+                  "status"
+                ],
+                "properties": {
+                  "available": {
+                    "type": "boolean"
+                  },
+                  "url": {
+                    "type": "string"
+                  },
+                  "timestamp": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "live": null,
+      "fixtures": [
+        {
+          "params": {
+            "pageUrl": "https://en.wikipedia.org/wiki/Link_rot"
+          },
+          "response": {
+            "url": "https://en.wikipedia.org/wiki/Link_rot",
+            "archived_snapshots": {
+              "closest": {
+                "status": "200",
+                "available": true,
+                "url": "http://web.archive.org/web/20261111014936/https://en.wikipedia.org/wiki/Link_rot",
+                "timestamp": "20261111014936"
+              }
+            }
+          }
+        },
+        {
+          "params": {
+            "pageUrl": "https://www.w3.org/Provider/Style/URI"
+          },
+          "response": {
+            "url": "https://www.w3.org/Provider/Style/URI",
+            "archived_snapshots": {
+              "closest": {
+                "status": "200",
+                "available": true,
+                "url": "http://web.archive.org/web/20261022095419/https://www.w3.org/Provider/Style/URI",
+                "timestamp": "20261022095419"
+              }
+            }
+          }
+        },
+        {
+          "response": {
+            "url": "https://new-blog.example/posts/first",
+            "archived_snapshots": {}
+          }
+        }
+      ]
+    },
+    {
+      "id": "src_oldest",
+      "name": "First snapshot of this page",
+      "kind": "rest",
+      "mode": "mock",
+      "confidence": "documented",
+      "evidence": "https://archive.org/help/wayback_api.php documents GET /wayback/available?url=<url>[&timestamp=] and this response shape. Fixtures are real responses fetched 2026-11-14. CORS probed 2026-11-14: OPTIONS with Origin: null -> access-control-allow-origin: null; GET -> *. timestamp=19960101 asks for the capture closest to the start of the archive.",
+      "request": {
+        "method": "GET",
+        "urlTemplate": "https://archive.org/wayback/available?url={pageUrl}&timestamp=19960101",
+        "auth": "none"
+      },
+      "schema": {
+        "type": "object",
+        "required": [
+          "archived_snapshots"
+        ],
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          },
+          "archived_snapshots": {
+            "type": "object",
+            "properties": {
+              "closest": {
+                "type": "object",
+                "required": [
+                  "available",
+                  "url",
+                  "timestamp",
+                  "status"
+                ],
+                "properties": {
+                  "available": {
+                    "type": "boolean"
+                  },
+                  "url": {
+                    "type": "string"
+                  },
+                  "timestamp": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "live": null,
+      "fixtures": [
+        {
+          "params": {
+            "pageUrl": "https://en.wikipedia.org/wiki/Link_rot"
+          },
+          "response": {
+            "url": "https://en.wikipedia.org/wiki/Link_rot",
+            "archived_snapshots": {
+              "closest": {
+                "status": "200",
+                "available": true,
+                "url": "http://web.archive.org/web/20040617175454/http://en.wikipedia.org:80/wiki/Link_rot",
+                "timestamp": "20040617175454"
+              }
+            },
+            "timestamp": "19960101"
+          }
+        },
+        {
+          "params": {
+            "pageUrl": "https://www.w3.org/Provider/Style/URI"
+          },
+          "response": {
+            "url": "https://www.w3.org/Provider/Style/URI",
+            "archived_snapshots": {
+              "closest": {
+                "status": "200",
+                "available": true,
+                "url": "http://web.archive.org/web/20000302064802/http://www.w3.org:80/Provider/Style/URI",
+                "timestamp": "20000302064802"
+              }
+            },
+            "timestamp": "19960101"
+          }
+        },
+        {
+          "response": {
+            "url": "https://new-blog.example/posts/first",
+            "archived_snapshots": {},
+            "timestamp": "19960101"
+          }
+        }
+      ]
+    },
+    {
+      "id": "src_history",
+      "name": "Captures per year",
+      "kind": "rest",
+      "mode": "mock",
+      "confidence": "invented",
+      "evidence": "The CDX server (https://web.archive.org/cdx/search/cdx?url=<url>&output=json) is public but answers rows as arrays with a header row, and its preflight with Origin: null answered 405. This { years: [{ year, captures }] } shape does not exist; the yearly counts in the fixtures are real (counted from CDX rows on 2026-11-14). Going live needs a small transform service, or the Internet Archive adding such an endpoint.",
+      "request": {
+        "method": "GET",
+        "urlTemplate": "https://web.archive.org/cdx/search/cdx?url={pageUrl}&output=json&fl=timestamp",
+        "auth": "none"
+      },
+      "schema": {
+        "type": "object",
+        "required": [
+          "years"
+        ],
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "years": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "year",
+                "captures"
+              ],
+              "properties": {
+                "year": {
+                  "type": "string"
+                },
+                "captures": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "live": null,
+      "fixtures": [
+        {
+          "params": {
+            "pageUrl": "https://en.wikipedia.org/wiki/Link_rot"
+          },
+          "response": {
+            "url": "https://en.wikipedia.org/wiki/Link_rot",
+            "years": [
+              {
+                "year": "2004",
+                "captures": 3
+              },
+              {
+                "year": "2005",
+                "captures": 10
+              },
+              {
+                "year": "2006",
+                "captures": 5
+              },
+              {
+                "year": "2007",
+                "captures": 3
+              },
+              {
+                "year": "2008",
+                "captures": 8
+              },
+              {
+                "year": "2009",
+                "captures": 27
+              },
+              {
+                "year": "2010",
+                "captures": 30
+              },
+              {
+                "year": "2011",
+                "captures": 93
+              },
+              {
+                "year": "2012",
+                "captures": 53
+              },
+              {
+                "year": "2013",
+                "captures": 22
+              },
+              {
+                "year": "2014",
+                "captures": 66
+              },
+              {
+                "year": "2015",
+                "captures": 64
+              },
+              {
+                "year": "2016",
+                "captures": 73
+              },
+              {
+                "year": "2017",
+                "captures": 55
+              },
+              {
+                "year": "2018",
+                "captures": 68
+              },
+              {
+                "year": "2019",
+                "captures": 110
+              },
+              {
+                "year": "2020",
+                "captures": 71
+              },
+              {
+                "year": "2021",
+                "captures": 89
+              },
+              {
+                "year": "2022",
+                "captures": 109
+              },
+              {
+                "year": "2023",
+                "captures": 92
+              },
+              {
+                "year": "2024",
+                "captures": 168
+              },
+              {
+                "year": "2025",
+                "captures": 198
+              },
+              {
+                "year": "2026",
+                "captures": 195
+              }
+            ]
+          }
+        },
+        {
+          "params": {
+            "pageUrl": "https://www.w3.org/Provider/Style/URI"
+          },
+          "response": {
+            "url": "https://www.w3.org/Provider/Style/URI",
+            "years": [
+              {
+                "year": "1999",
+                "captures": 1
+              },
+              {
+                "year": "2000",
+                "captures": 6
+              },
+              {
+                "year": "2001",
+                "captures": 21
+              },
+              {
+                "year": "2002",
+                "captures": 6
+              },
+              {
+                "year": "2003",
+                "captures": 5
+              },
+              {
+                "year": "2004",
+                "captures": 51
+              },
+              {
+                "year": "2005",
+                "captures": 68
+              },
+              {
+                "year": "2006",
+                "captures": 100
+              },
+              {
+                "year": "2007",
+                "captures": 69
+              },
+              {
+                "year": "2008",
+                "captures": 23
+              },
+              {
+                "year": "2009",
+                "captures": 46
+              },
+              {
+                "year": "2010",
+                "captures": 33
+              },
+              {
+                "year": "2011",
+                "captures": 32
+              },
+              {
+                "year": "2012",
+                "captures": 29
+              },
+              {
+                "year": "2013",
+                "captures": 68
+              },
+              {
+                "year": "2014",
+                "captures": 48
+              },
+              {
+                "year": "2015",
+                "captures": 48
+              },
+              {
+                "year": "2016",
+                "captures": 48
+              },
+              {
+                "year": "2017",
+                "captures": 63
+              },
+              {
+                "year": "2018",
+                "captures": 66
+              },
+              {
+                "year": "2019",
+                "captures": 87
+              },
+              {
+                "year": "2020",
+                "captures": 77
+              },
+              {
+                "year": "2021",
+                "captures": 214
+              },
+              {
+                "year": "2022",
+                "captures": 118
+              },
+              {
+                "year": "2023",
+                "captures": 188
+              },
+              {
+                "year": "2024",
+                "captures": 248
+              },
+              {
+                "year": "2025",
+                "captures": 163
+              },
+              {
+                "year": "2026",
+                "captures": 105
+              }
+            ]
+          }
+        },
+        {
+          "response": {
+            "url": "https://new-blog.example/posts/first",
+            "years": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "src_citations",
+      "name": "Sample archived-citation tags",
+      "kind": "bridge",
+      "mode": "mock",
+      "confidence": "invented",
+      "evidence": "Sample tag instances for the mock-up; real ones are posted by people through the Canopi composer.",
+      "request": {
+        "method": "GET",
+        "urlTemplate": "https://tags.invalid/archived-citation",
+        "auth": "none"
+      },
+      "schema": {
+        "type": "array"
+      },
+      "live": null,
+      "fixtures": [
+        {
+          "params": {
+            "pageUrl": "https://en.wikipedia.org/wiki/Link_rot"
+          },
+          "response": [
+            {
+              "anchorText": "link rot",
+              "data": {
+                "status": "gone",
+                "note": "The 2002 study this paragraph cites is offline; the archived copy still has its figures.",
+                "archiveUrl": "http://web.archive.org/web/20040617175454/http://en.wikipedia.org:80/wiki/Link_rot",
+                "originalUrl": "https://en.wikipedia.org/wiki/Link_rot",
+                "capturedAt": "20040617175454"
+              }
+            },
+            {
+              "anchorText": "reference rot",
+              "data": {
+                "status": "changed",
+                "note": "The page was rewritten in 2019; this copy shows the wording editors were quoting.",
+                "archiveUrl": "http://web.archive.org/web/20261111014936/https://en.wikipedia.org/wiki/Link_rot",
+                "originalUrl": "https://en.wikipedia.org/wiki/Link_rot",
+                "capturedAt": "20261111014936"
+              }
+            }
+          ]
+        },
+        {
+          "params": {
+            "pageUrl": "https://www.w3.org/Provider/Style/URI"
+          },
+          "response": [
+            {
+              "anchorText": "Cool URIs don't change",
+              "data": {
+                "status": "live",
+                "note": "Still online, but the 2000 capture is the version most essays quote.",
+                "archiveUrl": "http://web.archive.org/web/20000302064802/http://www.w3.org:80/Provider/Style/URI",
+                "originalUrl": "https://www.w3.org/Provider/Style/URI",
+                "capturedAt": "20000302064802"
+              }
+            }
+          ]
+        },
+        {
+          "response": []
+        }
+      ]
+    }
+  ],
+  "feedback": [
+    {
+      "at": "2026-11-14T23:22:09.829Z",
+      "stage": "ideas",
+      "text": "Trial run, no human: the agent chose idea_1 and idea_2; idea_3 is not buildable without link detection."
+    },
+    {
+      "at": "2026-11-14T23:22:25.723Z",
+      "stage": "components",
+      "text": "Trial run, no human: the agent accepted everything except ask-deepi."
+    },
+    {
+      "at": "2026-11-14T23:24:46.987Z",
+      "stage": "data",
+      "text": "Trial run: validate flagged quote as outside the payload schema; samples now use { anchorText, data }."
+    }
+  ],
+  "createdAt": "2026-11-14T23:20:59.673Z",
+  "updatedAt": "2026-11-15T00:04:05.609Z",
+  "design": {
+    "sidebar": {
+      "tab": {
+        "id": "wayback-machine-tab",
+        "title": "Wayback",
+        "icon": "🏛️"
+      },
+      "layout": [
+        "cmp_header",
+        "cmp_latest",
+        "cmp_latest_open",
+        "cmp_oldest",
+        "cmp_oldest_open",
+        "cmp_total",
+        "cmp_history",
+        "cmp_cite_form",
+        "cmp_citations"
+      ]
+    },
+    "smartTag": {
+      "tagType": "archived-citation",
+      "label": "Archived citation",
+      "emoji": "🏛️",
+      "pill": {
+        "emoji": "🏛️",
+        "label": "Archived",
+        "metricField": "status"
+      },
+      "popover": [
+        "cmp_cite_status",
+        "cmp_cite_note",
+        "cmp_cite_link",
+        "cmp_cite_kv",
+        "cmp_cite_author"
+      ],
+      "payloadSchema": {
+        "type": "object",
+        "required": [
+          "archiveUrl",
+          "status",
+          "note"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "archiveUrl": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500
+          },
+          "originalUrl": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500
+          },
+          "capturedAt": {
+            "type": "string",
+            "maxLength": 14,
+            "description": "Wayback timestamp, YYYYMMDDhhmmss"
+          },
+          "status": {
+            "enum": [
+              "live",
+              "changed",
+              "gone"
+            ],
+            "x-canopi-index": "enum"
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        }
+      },
+      "summary": "Archived ({{status}}): {{note}}"
+    },
+    "theme": {
+      "accent": "#3b6fb6"
+    }
+  },
+  "manifests": {
+    "tablication": {
+      "manifestVersion": 2,
+      "kind": "tablication",
+      "id": "studio.wayback-machine.tab",
+      "name": "Wayback Machine",
+      "version": "0.1.0",
+      "description": "Open the Wayback tab on any page and see straight away whether the Internet Archive has it: the latest capture, the first capture, and how often it has been saved over the years, each one link away. Select a claim and attach the archived copy that backs it. Everyone who reads the page later sees the citation pill, and the evidence still opens when the original link has rotted.",
+      "author": {
+        "name": "canopi-studio skill trial"
+      },
+      "permissions": [
+        "page:context",
+        "tags:compose",
+        "tags:read:archived-citation"
+      ],
+      "network": {
+        "connect": [
+          "studio-mock.invalid"
+        ]
+      },
+      "tablication": {
+        "tab": {
+          "id": "wayback-machine-tab",
+          "title": "Wayback",
+          "icon": "🏛️"
+        },
+        "entry": {
+          "html": "index.html"
+        },
+        "contains": [
+          "archived-citation"
+        ]
+      }
+    },
+    "smartTag": {
+      "manifestVersion": 2,
+      "kind": "smart-tag",
+      "id": "studio.wayback-machine.tag",
+      "name": "Archived citation",
+      "version": "0.1.0",
+      "description": "Open the Wayback tab on any page and see straight away whether the Internet Archive has it: the latest capture, the first capture, and how often it has been saved over the years, each one link away. Select a claim and attach the archived copy that backs it. Everyone who reads the page later sees the citation pill, and the evidence still opens when the original link has rotted.",
+      "author": {
+        "name": "canopi-studio skill trial"
+      },
+      "triggers": [
+        {
+          "type": "selection",
+          "minChars": 20
+        },
+        {
+          "type": "link"
+        }
+      ],
+      "smartTag": {
+        "tagType": "archived-citation",
+        "emoji": "🏛️",
+        "label": "Archived citation",
+        "tier": "composer",
+        "statusMode": "basic",
+        "payloadSchema": {
+          "type": "object",
+          "required": [
+            "archiveUrl",
+            "status",
+            "note"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "archiveUrl": {
+              "type": "string",
+              "format": "uri",
+              "maxLength": 500
+            },
+            "originalUrl": {
+              "type": "string",
+              "format": "uri",
+              "maxLength": 500
+            },
+            "capturedAt": {
+              "type": "string",
+              "maxLength": 14,
+              "description": "Wayback timestamp, YYYYMMDDhhmmss"
+            },
+            "status": {
+              "enum": [
+                "live",
+                "changed",
+                "gone"
+              ],
+              "x-canopi-index": "enum"
+            },
+            "note": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            }
+          }
+        },
+        "summary": "Archived ({{status}}): {{note}}",
+        "presentation": {
+          "pill": {
+            "emoji": "🏛️",
+            "label": "Archived",
+            "metric": {
+              "type": "field",
+              "field": "status"
+            }
+          },
+          "popovers": [
+            {
+              "trigger": "hover",
+              "title": "Archived citation",
+              "body": [
+                {
+                  "type": "badge",
+                  "field": "status"
+                },
+                {
+                  "type": "text",
+                  "field": "note",
+                  "label": "Why it matters"
+                },
+                {
+                  "type": "link",
+                  "field": "archiveUrl",
+                  "label": "Open the archived copy"
+                },
+                {
+                  "type": "kv",
+                  "fields": [
+                    "originalUrl",
+                    "capturedAt"
+                  ]
+                },
+                {
+                  "type": "author"
+                }
+              ]
+            }
+          ],
+          "onClick": "openTablication"
+        },
+        "surfaces": {
+          "discuss": "inline",
+          "home": "studio.wayback-machine.tab",
+          "composer": "both"
+        }
+      }
+    }
+  }
+}

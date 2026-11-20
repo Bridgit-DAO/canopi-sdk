@@ -1,0 +1,13 @@
+:root { color-scheme: dark; --bg: #121417; --fg: #e8eaed; --muted: #9aa0a6; --line: #2c3036; }
+:root[data-theme="light"] { color-scheme: light; --bg: #ffffff; --fg: #1f2328; --muted: #57606a; --line: #d0d7de; }
+html, body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.45 system-ui, sans-serif; }
+main { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.muted { color: var(--muted); margin: 0; }
+.page { margin: 0; word-break: break-all; font-weight: 600; }
+textarea { width: 100%; box-sizing: border-box; background: transparent; color: inherit; border: 1px solid var(--line); border-radius: 8px; padding: 8px; font: inherit; resize: vertical; }
+
+h2 { font-size: 13px; margin: 16px 0 6px; }
+.public { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.public li { padding: 6px 8px; border-radius: 6px; background: var(--chip, rgba(127,127,127,.12)); }
+.public .kind { font-size: 11px; text-transform: uppercase; opacity: .7; }
+button { margin-top: 8px; font: inherit; padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(127,127,127,.4); background: transparent; color: inherit; cursor: pointer; }

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.tsbuildinfo
+coverage/
+.DS_Store
+modules/*/dist/
+
+# canopi-studio: build output and the regenerable preview (studio/<slug>/project.json and draft/ are kept)
+studio/*/draft/*/dist/
+studio/*/preview.html

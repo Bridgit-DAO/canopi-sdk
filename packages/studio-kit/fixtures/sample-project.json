@@ -1,0 +1,1069 @@
+{
+  "schemaVersion": 1,
+  "id": "7f3c9a52-1d4e-4b8a-9c61-2e5f0b7d4a13",
+  "slug": "pinecone-crm",
+  "name": "Pinecone CRM",
+  "stage": "mockup",
+  "source": {
+    "url": "https://www.pineconecrm.example/",
+    "uploads": [
+      {
+        "name": "pinecone-api-overview.pdf",
+        "mime": "application/pdf",
+        "chars": 18432
+      }
+    ],
+    "notes": "Pinecone is a CRM for small B2B sales teams (5-50 reps). Reps live in the browser researching prospects; we want the account brief to follow them onto the prospect's own website.",
+    "extracted": {
+      "title": "Pinecone CRM: the lightweight CRM for small sales teams",
+      "summary": "Pinecone tracks accounts, deals and activity for small B2B sales teams. It has a public REST API (accounts, deals, activities, reports) authenticated with per-workspace API keys, and a Chrome extension that today only logs emails.",
+      "audience": "Account executives and sales managers at B2B companies with 5-50 reps.",
+      "entities": [
+        {
+          "name": "Account",
+          "description": "A company being sold to, keyed by its web domain.",
+          "fields": [
+            "id",
+            "name",
+            "domain",
+            "industry",
+            "owner",
+            "tier",
+            "arr",
+            "health",
+            "lastContactAt"
+          ]
+        },
+        {
+          "name": "Deal",
+          "description": "An opportunity against an account, moving through pipeline stages.",
+          "fields": [
+            "id",
+            "name",
+            "stage",
+            "amount",
+            "closeDate",
+            "probability"
+          ]
+        },
+        {
+          "name": "Activity",
+          "description": "A logged email, call or meeting.",
+          "fields": [
+            "at",
+            "type",
+            "subject",
+            "by"
+          ]
+        }
+      ],
+      "pages": [
+        {
+          "urlPattern": "https://app.pineconecrm.example/accounts/:id",
+          "purpose": "Account record: owner, health, deals, timeline."
+        },
+        {
+          "urlPattern": "https://app.pineconecrm.example/pipeline",
+          "purpose": "Kanban board of open deals by stage."
+        }
+      ],
+      "apiHints": [
+        {
+          "evidence": "developers.pineconecrm.example/reference#accounts-lookup documents GET /v1/accounts/lookup?domain=",
+          "guess": "Look up the account for the site the rep is on by its hostname."
+        },
+        {
+          "evidence": "OpenAPI link in the uploaded PDF lists /v1/deals and /v1/activities with an account_domain filter",
+          "guess": "Deals and activity can be fetched by domain without a second lookup."
+        },
+        {
+          "evidence": "No public reporting endpoint found",
+          "guess": "Weekly pipeline totals would need a new /v1/reports/pipeline endpoint."
+        }
+      ]
+    }
+  },
+  "ideas": [
+    {
+      "id": "idea_1",
+      "kind": "sidebar",
+      "title": "Account brief on the prospect's site",
+      "pitch": "Open any prospect's website and the Pinecone tab shows who owns the account, open deals, the last touches and how the pipeline is trending.",
+      "userStory": "As an account executive researching a prospect, I want their Pinecone record next to their website so I stop switching tabs before a call.",
+      "whereItAppears": "Sidebar tab on every page; the account is matched by the page's hostname.",
+      "triggers": [
+        {
+          "type": "page"
+        }
+      ],
+      "dataNeeded": [
+        "account by domain",
+        "open deals for the account",
+        "recent activity",
+        "weekly pipeline totals"
+      ],
+      "selected": true
+    },
+    {
+      "id": "idea_2",
+      "kind": "smart-tag",
+      "title": "Buying signals",
+      "pitch": "Reps mark a passage on a news or careers page as a buying signal (funding, hiring, expansion) so the whole team sees it on that page.",
+      "userStory": "As a sales manager, I want reps to flag buying signals where they find them so the evidence stays attached to the source.",
+      "whereItAppears": "On a text selection of 20+ characters, and on news pages.",
+      "triggers": [
+        {
+          "type": "selection",
+          "minChars": 20
+        },
+        {
+          "type": "url-pattern",
+          "match": "*://*/news/*"
+        }
+      ],
+      "dataNeeded": [
+        "signal type",
+        "why it matters",
+        "strength 1-5",
+        "source link"
+      ],
+      "selected": true
+    },
+    {
+      "id": "idea_3",
+      "kind": "both",
+      "title": "Territory map",
+      "pitch": "Show which rep owns each company you browse, with a pill on company names in articles.",
+      "userStory": "As a rep, I want to know instantly whether a company mentioned in an article is in my territory.",
+      "whereItAppears": "Company names in articles (needs entity detection the platform does not offer yet).",
+      "triggers": [
+        {
+          "type": "manual"
+        }
+      ],
+      "dataNeeded": [
+        "territory assignments"
+      ],
+      "selected": false
+    }
+  ],
+  "components": [
+    {
+      "id": "cmp_header",
+      "ideaId": "idea_1",
+      "surface": "sidebar",
+      "type": "header",
+      "title": "Account",
+      "purpose": "Name the matched account and its industry.",
+      "binding": {
+        "sourceId": "src_account",
+        "path": "$.account"
+      },
+      "props": {
+        "titleField": "name",
+        "subtitleField": "industry"
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_arr",
+      "ideaId": "idea_1",
+      "surface": "sidebar",
+      "type": "stat",
+      "title": "ARR",
+      "purpose": "How much the account is worth today.",
+      "binding": {
+        "sourceId": "src_account",
+        "path": "$.account"
+      },
+      "props": {
+        "field": "arr",
+        "format": "currency",
+        "currency": "USD",
+        "label": "Annual recurring revenue"
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_pipeline_total",
+      "ideaId": "idea_1",
+      "surface": "sidebar",
+      "type": "stat",
+      "title": "Open pipeline",
+      "purpose": "Sum of open deal amounts.",
+      "binding": {
+        "sourceId": "src_deals",
+        "path": "$.items[*]"
+      },
+      "props": {
+        "aggregate": "sum",
+        "field": "amount",
+        "format": "currency",
+        "currency": "USD",
+        "label": "Across open deals"
+      },
+      "status": "accepted",
+      "feedback": "Show the sum, not the count."
+    },
+    {
+      "id": "cmp_account_detail",
+      "ideaId": "idea_1",
+      "surface": "sidebar",
+      "type": "detail",
+      "title": "Ownership",
+      "purpose": "Who owns the account and how healthy it is.",
+      "binding": {
+        "sourceId": "src_account",
+        "path": "$.account"
+      },
+      "props": {
+        "fields": [
+          {
+            "field": "owner.name",
+            "label": "Owner"
+          },
+          {
+            "field": "tier",
+            "label": "Tier"
+          },
+          {
+            "field": "health",
+            "label": "Health"
+          },
+          {
+            "field": "lastContactAt",
+            "label": "Last contact"
+          }
+        ]
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_deals",
+      "ideaId": "idea_1",
+      "surface": "sidebar",
+      "type": "table",
+      "title": "Open deals",
+      "purpose": "Deals in flight for this account.",
+      "binding": {
+        "sourceId": "src_deals",
+        "path": "$.items[*]"
+      },
+      "props": {
+        "columns": [
+          {
+            "field": "name",
+            "label": "Deal"
+          },
+          {
+            "field": "stage",
+            "label": "Stage"
+          },
+          {
+            "field": "amount",
+            "label": "Amount"
+          }
+        ],
+        "format": "currency",
+        "currency": "USD",
+        "limit": 5,
+        "emptyText": "No open deals."
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_activity",
+      "ideaId": "idea_1",
+      "surface": "sidebar",
+      "type": "timeline",
+      "title": "Recent activity",
+      "purpose": "The last touches before a call.",
+      "binding": {
+        "sourceId": "src_activity",
+        "path": "$.items[*]"
+      },
+      "props": {
+        "dateField": "at",
+        "titleField": "subject",
+        "bodyField": "by",
+        "limit": 5
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_trend",
+      "ideaId": "idea_1",
+      "surface": "sidebar",
+      "type": "sparkline",
+      "title": "Pipeline trend",
+      "purpose": "Is the account heating up or cooling down?",
+      "binding": {
+        "sourceId": "src_pipeline",
+        "path": "$.weeks[*]"
+      },
+      "props": {
+        "field": "value",
+        "label": "This week",
+        "format": "currency",
+        "currency": "USD"
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_signal_form",
+      "ideaId": "idea_2",
+      "surface": "sidebar",
+      "type": "form",
+      "title": "Flag a buying signal",
+      "purpose": "Post a buying signal about this page from the tab.",
+      "binding": null,
+      "props": {
+        "fields": [
+          {
+            "name": "signal",
+            "label": "Signal",
+            "type": "select",
+            "options": [
+              "funding",
+              "hiring",
+              "expansion",
+              "leadership-change",
+              "tech-change"
+            ],
+            "required": true
+          },
+          {
+            "name": "note",
+            "label": "Why it matters",
+            "type": "textarea",
+            "required": true
+          },
+          {
+            "name": "strength",
+            "label": "Strength (1-5)",
+            "type": "number"
+          }
+        ],
+        "submitLabel": "Post a buying signal…",
+        "composeTagType": "buying-signal"
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_signals",
+      "ideaId": "idea_2",
+      "surface": "sidebar",
+      "type": "tag-feed",
+      "title": "Signals on this page",
+      "purpose": "What the team already flagged here.",
+      "binding": null,
+      "props": {
+        "tagType": "buying-signal",
+        "limit": 5,
+        "emptyText": "No buying signals on this page yet."
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_open",
+      "ideaId": "idea_1",
+      "surface": "sidebar",
+      "type": "action",
+      "title": "",
+      "purpose": "Jump to the full record.",
+      "binding": {
+        "sourceId": "src_account",
+        "path": "$.account"
+      },
+      "props": {
+        "label": "Open in Pinecone",
+        "kind": "link",
+        "urlField": "url"
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_ask",
+      "ideaId": "idea_1",
+      "surface": "sidebar",
+      "type": "ask-deepi",
+      "title": "Ask Deepi",
+      "purpose": "Prep questions about the account.",
+      "binding": null,
+      "props": {
+        "placeholder": "Ask about this account…",
+        "suggestions": [
+          "What changed since my last call?",
+          "Which deal is most at risk?"
+        ]
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_logo_card",
+      "ideaId": "idea_1",
+      "surface": "sidebar",
+      "type": "card",
+      "title": "Company card",
+      "purpose": "Logo, description and website.",
+      "binding": {
+        "sourceId": "src_account",
+        "path": "$.account"
+      },
+      "props": {},
+      "status": "rejected",
+      "feedback": "Duplicates the header; the site itself is right there."
+    },
+    {
+      "id": "cmp_sig_badge",
+      "ideaId": "idea_2",
+      "surface": "smart-tag",
+      "type": "badge",
+      "title": "Signal type",
+      "purpose": "What kind of signal it is.",
+      "binding": null,
+      "props": {
+        "field": "signal"
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_sig_note",
+      "ideaId": "idea_2",
+      "surface": "smart-tag",
+      "type": "text",
+      "title": "Why it matters",
+      "purpose": "The rep's one-line reasoning.",
+      "binding": null,
+      "props": {
+        "field": "note",
+        "label": "Why it matters"
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_sig_strength",
+      "ideaId": "idea_2",
+      "surface": "smart-tag",
+      "type": "rating",
+      "title": "Strength",
+      "purpose": "How strong the signal is.",
+      "binding": null,
+      "props": {
+        "field": "strength",
+        "max": 5
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_sig_source",
+      "ideaId": "idea_2",
+      "surface": "smart-tag",
+      "type": "link",
+      "title": "Source",
+      "purpose": "Where the signal came from.",
+      "binding": null,
+      "props": {
+        "field": "source",
+        "label": "Source"
+      },
+      "status": "accepted",
+      "feedback": ""
+    },
+    {
+      "id": "cmp_sig_author",
+      "ideaId": "idea_2",
+      "surface": "smart-tag",
+      "type": "author",
+      "title": "Flagged by",
+      "purpose": "Which rep flagged it.",
+      "binding": null,
+      "props": {},
+      "status": "accepted",
+      "feedback": ""
+    }
+  ],
+  "dataSources": [
+    {
+      "id": "src_account",
+      "name": "Account lookup by domain",
+      "kind": "rest",
+      "mode": "mock",
+      "confidence": "documented",
+      "evidence": "developers.pineconecrm.example/reference#accounts-lookup (GET /v1/accounts/lookup?domain=)",
+      "request": {
+        "method": "GET",
+        "urlTemplate": "https://api.pineconecrm.example/v1/accounts/lookup?domain={pageHost}",
+        "auth": "apiKey"
+      },
+      "schema": {
+        "type": "object",
+        "required": [
+          "account"
+        ],
+        "properties": {
+          "account": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "domain"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "domain": {
+                "type": "string"
+              },
+              "industry": {
+                "type": "string"
+              },
+              "owner": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  }
+                }
+              },
+              "tier": {
+                "enum": [
+                  "strategic",
+                  "growth",
+                  "self-serve"
+                ]
+              },
+              "arr": {
+                "type": "number"
+              },
+              "health": {
+                "enum": [
+                  "healthy",
+                  "watch",
+                  "at-risk"
+                ]
+              },
+              "lastContactAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              }
+            }
+          }
+        }
+      },
+      "fixtures": [
+        {
+          "params": {
+            "pageHost": "www.northwind-outfitters.example"
+          },
+          "response": {
+            "account": {
+              "id": "acc_4821",
+              "name": "Northwind Outfitters",
+              "domain": "northwind-outfitters.example",
+              "industry": "Outdoor retail, 420 employees",
+              "owner": {
+                "name": "Priya Raman",
+                "email": "priya@pinecone-demo.example"
+              },
+              "tier": "growth",
+              "arr": 186000,
+              "health": "watch",
+              "lastContactAt": "2026-11-06T15:30:00Z",
+              "url": "https://app.pineconecrm.example/accounts/acc_4821"
+            }
+          }
+        },
+        {
+          "response": {
+            "account": {
+              "id": "acc_1077",
+              "name": "Bluefin Analytics",
+              "domain": "bluefin-analytics.example",
+              "industry": "Data tooling, 85 employees",
+              "owner": {
+                "name": "Marcus Webb",
+                "email": "marcus@pinecone-demo.example"
+              },
+              "tier": "strategic",
+              "arr": 412000,
+              "health": "healthy",
+              "lastContactAt": "2026-11-11T10:00:00Z",
+              "url": "https://app.pineconecrm.example/accounts/acc_1077"
+            }
+          }
+        }
+      ],
+      "live": null
+    },
+    {
+      "id": "src_deals",
+      "name": "Open deals for the account",
+      "kind": "rest",
+      "mode": "mock",
+      "confidence": "inferred",
+      "evidence": "OpenAPI link in pinecone-api-overview.pdf lists GET /v1/deals with an account_domain filter; response shape inferred from the deal fields on the account page.",
+      "request": {
+        "method": "GET",
+        "urlTemplate": "https://api.pineconecrm.example/v1/deals?account_domain={pageHost}&status=open",
+        "auth": "apiKey"
+      },
+      "schema": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "name",
+                "stage",
+                "amount"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "stage": {
+                  "enum": [
+                    "discovery",
+                    "demo",
+                    "proposal",
+                    "negotiation"
+                  ]
+                },
+                "amount": {
+                  "type": "number"
+                },
+                "closeDate": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "probability": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "total": {
+            "type": "integer"
+          }
+        }
+      },
+      "fixtures": [
+        {
+          "params": {
+            "pageHost": "www.northwind-outfitters.example"
+          },
+          "response": {
+            "items": [
+              {
+                "id": "dl_311",
+                "name": "Store POS rollout",
+                "stage": "proposal",
+                "amount": 64000,
+                "closeDate": "2026-12-15",
+                "probability": 0.6
+              },
+              {
+                "id": "dl_318",
+                "name": "Loyalty add-on",
+                "stage": "demo",
+                "amount": 18500,
+                "closeDate": "2027-01-31",
+                "probability": 0.3
+              }
+            ],
+            "total": 2
+          }
+        },
+        {
+          "response": {
+            "items": [
+              {
+                "id": "dl_207",
+                "name": "Enterprise renewal",
+                "stage": "negotiation",
+                "amount": 412000,
+                "closeDate": "2026-12-01",
+                "probability": 0.8
+              },
+              {
+                "id": "dl_219",
+                "name": "Analytics seats +40",
+                "stage": "proposal",
+                "amount": 52000,
+                "closeDate": "2026-12-20",
+                "probability": 0.5
+              },
+              {
+                "id": "dl_224",
+                "name": "Data residency (EU)",
+                "stage": "discovery",
+                "amount": 30000,
+                "closeDate": "2027-02-28",
+                "probability": 0.2
+              }
+            ],
+            "total": 3
+          }
+        }
+      ],
+      "live": null
+    },
+    {
+      "id": "src_activity",
+      "name": "Recent activity",
+      "kind": "rest",
+      "mode": "mock",
+      "confidence": "inferred",
+      "evidence": "GET /v1/activities is in the OpenAPI index; field names taken from the account timeline UI.",
+      "request": {
+        "method": "GET",
+        "urlTemplate": "https://api.pineconecrm.example/v1/activities?account_domain={pageHost}&limit=10",
+        "auth": "apiKey"
+      },
+      "schema": {
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "at",
+                "type",
+                "subject"
+              ],
+              "properties": {
+                "at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "type": {
+                  "enum": [
+                    "email",
+                    "call",
+                    "meeting",
+                    "note"
+                  ]
+                },
+                "subject": {
+                  "type": "string"
+                },
+                "by": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "fixtures": [
+        {
+          "params": {
+            "pageHost": "www.northwind-outfitters.example"
+          },
+          "response": {
+            "items": [
+              {
+                "at": "2026-11-06T15:30:00Z",
+                "type": "call",
+                "subject": "POS pricing walkthrough",
+                "by": "Priya Raman"
+              },
+              {
+                "at": "2026-10-29T09:10:00Z",
+                "type": "email",
+                "subject": "Sent proposal v2",
+                "by": "Priya Raman"
+              },
+              {
+                "at": "2026-10-14T17:00:00Z",
+                "type": "meeting",
+                "subject": "Store ops discovery (3 regional managers)",
+                "by": "Priya Raman"
+              }
+            ]
+          }
+        },
+        {
+          "response": {
+            "items": [
+              {
+                "at": "2026-11-11T10:00:00Z",
+                "type": "meeting",
+                "subject": "Renewal terms with CFO",
+                "by": "Marcus Webb"
+              },
+              {
+                "at": "2026-11-03T14:00:00Z",
+                "type": "email",
+                "subject": "EU residency questionnaire returned",
+                "by": "Marcus Webb"
+              }
+            ]
+          }
+        }
+      ],
+      "live": null
+    },
+    {
+      "id": "src_pipeline",
+      "name": "Weekly pipeline totals",
+      "kind": "rest",
+      "mode": "mock",
+      "confidence": "invented",
+      "evidence": "No public reporting endpoint; shape invented for the demo. Pinecone would need to add /v1/reports/pipeline.",
+      "request": {
+        "method": "GET",
+        "urlTemplate": "https://api.pineconecrm.example/v1/reports/pipeline?account_domain={pageHost}&weeks=8",
+        "auth": "apiKey"
+      },
+      "schema": {
+        "type": "object",
+        "required": [
+          "weeks"
+        ],
+        "properties": {
+          "weeks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "week",
+                "value"
+              ],
+              "properties": {
+                "week": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "value": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      },
+      "fixtures": [
+        {
+          "params": {
+            "pageHost": "www.northwind-outfitters.example"
+          },
+          "response": {
+            "weeks": [
+              {
+                "week": "2026-09-21",
+                "value": 22000
+              },
+              {
+                "week": "2026-09-28",
+                "value": 22000
+              },
+              {
+                "week": "2026-10-05",
+                "value": 40500
+              },
+              {
+                "week": "2026-10-12",
+                "value": 40500
+              },
+              {
+                "week": "2026-10-19",
+                "value": 64000
+              },
+              {
+                "week": "2026-10-26",
+                "value": 82500
+              },
+              {
+                "week": "2026-11-02",
+                "value": 82500
+              },
+              {
+                "week": "2026-11-09",
+                "value": 82500
+              }
+            ]
+          }
+        },
+        {
+          "response": {
+            "weeks": [
+              {
+                "week": "2026-09-21",
+                "value": 380000
+              },
+              {
+                "week": "2026-09-28",
+                "value": 412000
+              },
+              {
+                "week": "2026-10-05",
+                "value": 412000
+              },
+              {
+                "week": "2026-10-12",
+                "value": 442000
+              },
+              {
+                "week": "2026-10-19",
+                "value": 464000
+              },
+              {
+                "week": "2026-10-26",
+                "value": 464000
+              },
+              {
+                "week": "2026-11-02",
+                "value": 494000
+              },
+              {
+                "week": "2026-11-09",
+                "value": 494000
+              }
+            ]
+          }
+        }
+      ],
+      "live": null
+    }
+  ],
+  "design": {
+    "sidebar": {
+      "tab": {
+        "id": "pinecone-tab",
+        "title": "Pinecone",
+        "icon": "🌲"
+      },
+      "layout": [
+        "cmp_header",
+        "cmp_arr",
+        "cmp_pipeline_total",
+        "cmp_account_detail",
+        "cmp_deals",
+        "cmp_activity",
+        "cmp_trend",
+        "cmp_open",
+        "cmp_signal_form",
+        "cmp_signals",
+        "cmp_ask"
+      ]
+    },
+    "smartTag": {
+      "tagType": "buying-signal",
+      "label": "Buying signal",
+      "emoji": "📈",
+      "pill": {
+        "emoji": "📈",
+        "label": "Buying signal",
+        "metricField": "signal"
+      },
+      "popover": [
+        "cmp_sig_badge",
+        "cmp_sig_note",
+        "cmp_sig_strength",
+        "cmp_sig_source",
+        "cmp_sig_author"
+      ],
+      "payloadSchema": {
+        "type": "object",
+        "required": [
+          "signal",
+          "note"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "signal": {
+            "enum": [
+              "funding",
+              "hiring",
+              "expansion",
+              "leadership-change",
+              "tech-change"
+            ],
+            "x-canopi-index": "enum"
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "strength": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5,
+            "x-canopi-index": "number"
+          },
+          "source": {
+            "type": "string",
+            "format": "uri",
+            "maxLength": 500
+          }
+        }
+      },
+      "summary": "{{signal}}: {{note}}"
+    },
+    "theme": {
+      "accent": "#2f9e6b"
+    }
+  },
+  "feedback": [
+    {
+      "stage": "ideas",
+      "text": "Drop the territory map for now; entity detection isn't in the platform.",
+      "at": "2026-11-13T16:02:11Z"
+    },
+    {
+      "stage": "components",
+      "text": "No company card, the header is enough. Pipeline stat should be a sum.",
+      "at": "2026-11-13T16:20:45Z"
+    }
+  ],
+  "manifests": {
+    "tablication": null,
+    "smartTag": null
+  },
+  "llm": {
+    "provider": "offline",
+    "model": "heuristic-v0"
+  },
+  "createdAt": "2026-11-13T15:48:03Z",
+  "updatedAt": "2026-11-13T16:41:27Z"
+}

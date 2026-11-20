@@ -1,0 +1,34 @@
+{
+  "manifestVersion": 2,
+  "kind": "tablication",
+  "id": "studio.wayback-machine.tab",
+  "name": "Wayback Machine",
+  "version": "0.1.0",
+  "description": "Open the Wayback tab on any page and see straight away whether the Internet Archive has it: the latest capture, the first capture, and how often it has been saved over the years, each one link away. Select a claim and attach the archived copy that backs it. Everyone who reads the page later sees the citation pill, and the evidence still opens when the original link has rotted.",
+  "author": {
+    "name": "canopi-studio skill trial"
+  },
+  "permissions": [
+    "page:context",
+    "tags:compose",
+    "tags:read:archived-citation"
+  ],
+  "network": {
+    "connect": [
+      "studio-mock.invalid"
+    ]
+  },
+  "tablication": {
+    "tab": {
+      "id": "wayback-machine-tab",
+      "title": "Wayback",
+      "icon": "🏛️"
+    },
+    "entry": {
+      "html": "index.html"
+    },
+    "contains": [
+      "archived-citation"
+    ]
+  }
+}

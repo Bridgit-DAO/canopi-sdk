@@ -1,0 +1,27 @@
+{
+  "manifestVersion": 2,
+  "kind": "tablication",
+  "id": "com.example.hello-page",
+  "name": "Hello page",
+  "version": "0.1.0",
+  "description": "Shows the page you are on and remembers one page for you. The first-module example from docs/FIRST_MODULE.md.",
+  "author": {
+    "name": "Example Developer"
+  },
+  "permissions": [
+    "page:context",
+    "storage:module",
+    "ui:badge"
+  ],
+  "tablication": {
+    "tab": {
+      "id": "hello-page-tab",
+      "title": "Hello",
+      "icon": "👋",
+      "order": 70
+    },
+    "entry": {
+      "html": "index.html"
+    }
+  }
+}

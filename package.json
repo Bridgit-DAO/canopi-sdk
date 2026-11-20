@@ -1,0 +1,48 @@
+{
+  "name": "canopi-sdk",
+  "version": "0.2.0",
+  "description": "SDK applications and client-side components for the Canopi ecosystem",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w packages/shared -w packages/manifest -w packages/tab-bridge && npm run build --workspaces --if-present",
+    "type-check": "npm run build -w packages/shared -w packages/manifest -w packages/tab-bridge && npm run type-check --workspaces --if-present",
+    "test": "vitest run",
+    "lint": "eslint \"packages/*/src/**/*.ts\"",
+    "clean": "rimraf packages/*/dist"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "happy-dom": "^20.14.5",
+    "rimraf": "^5.0.0",
+    "typescript": "^5.6.0",
+    "vite": "^7.3.6",
+    "vitest": "^4.1.11"
+  },
+  "keywords": [
+    "canopi",
+    "smart-tags",
+    "annotations",
+    "sidebar",
+    "sdk",
+    "browser-extension",
+    "content-anchoring"
+  ],
+  "author": "Canopi Team",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Bridgit-DAO/canopi-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Bridgit-DAO/canopi-sdk/issues"
+  },
+  "homepage": "https://github.com/Bridgit-DAO/canopi-sdk#readme",
+  "type": "module"
+}

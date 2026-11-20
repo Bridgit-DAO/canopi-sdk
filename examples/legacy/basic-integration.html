@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<!-- LEGACY: uses packages Canopi does not load, and imports bare package names with no bundler, so it does not run as-is. See examples/legacy/README.md and modules/ for the current design. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canopi SDK - Basic Integration Example</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .demo-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 16px;
+            max-width: 300px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .demo-panel h3 {
+            margin: 0 0 12px 0;
+            font-size: 16px;
+        }
+        
+        .demo-panel button {
+            margin: 4px;
+            padding: 6px 12px;
+            border: 1px solid #007bff;
+            border-radius: 4px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .demo-panel button:hover {
+            background: #0056b3;
+        }
+        
+        .demo-panel button.secondary {
+            background: #6c757d;
+            border-color: #6c757d;
+        }
+        
+        .demo-panel button.secondary:hover {
+            background: #545b62;
+        }
+        
+        .status {
+            margin: 8px 0;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .highlight-demo {
+            background: #fff3cd;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .content-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-panel">
+        <h3>🏷️ Canopi SDK Demo</h3>
+        <div id="status" class="status info">
+            Initializing...
+        </div>
+        <div>
+            <button onclick="toggleSmartTags()">Toggle Smart Tags</button>
+            <button onclick="clearAnnotations()" class="secondary">Clear All</button>
+        </div>
+        <div>
+            <button onclick="showStats()">Show Stats</button>
+            <button onclick="testSelection()" class="secondary">Test Selection</button>
+        </div>
+        <div id="stats" style="margin-top: 12px; font-size: 11px; color: #6c757d;"></div>
+    </div>
+
+    <h1>Canopi SDK - Smart Tags Demo</h1>
+    
+    <div class="highlight-demo">
+        <strong>Try it out:</strong> Select any text on this page to see the Canopi smart tag system in action!
+        You can annotate, highlight, or discuss any selected text.
+    </div>
+
+    <div class="content-section">
+        <h2>What are Smart Tags?</h2>
+        <p>
+            Smart tags are context-anchored annotations that allow users to visualize, annotate, and discuss 
+            specific pieces of content on web pages. The Canopi smart tag system implements the "bike rack" 
+            architecture with pluggable annotation providers.
+        </p>
+        
+        <p>
+            This system enables seamless integration between different annotation backends like local storage, 
+            Hypothesis, and other collaborative annotation platforms. Users can select text, add notes, 
+            apply visual styling, and share insights with others.
+        </p>
+    </div>
+
+    <div class="content-section">
+        <h2>Key Features</h2>
+        <ul>
+            <li><strong>Text Selection:</strong> Select any text to create anchored annotations</li>
+            <li><strong>Visual Styling:</strong> Apply highlights, underlines, and custom styles</li>
+            <li><strong>Rich Annotations:</strong> Add notes, tags, and categorize content</li>
+            <li><strong>Provider System:</strong> Sync with multiple annotation backends</li>
+            <li><strong>Non-invasive:</strong> Overlay system that doesn't modify host page DOM</li>
+            <li><strong>Event-driven:</strong> Integrates seamlessly with canopi ecosystem</li>
+        </ul>
+    </div>
+
+    <div class="content-section">
+        <h2>Architecture</h2>
+        <p>
+            The Canopi SDK follows a modular architecture with clear separation between core functionality 
+            and client applications. The smart tags system is built on several key components:
+        </p>
+        
+        <h3>Core Components</h3>
+        <ul>
+            <li><strong>SmartTagManager:</strong> Central coordination and provider management</li>
+            <li><strong>SelectionOverlay:</strong> Non-invasive text selection capture</li>
+            <li><strong>CanonicalUrlService:</strong> URL normalization for proxy/direct access</li>
+            <li><strong>PageContextManager:</strong> Page navigation and context tracking</li>
+        </ul>
+        
+        <h3>Provider System</h3>
+        <p>
+            The pluggable provider architecture allows integration with multiple annotation backends:
+        </p>
+        <ul>
+            <li><strong>Local Provider:</strong> Browser localStorage (default, always available)</li>
+            <li><strong>Hypothesis Provider:</strong> Integration with Hypothesis.is platform</li>
+            <li><strong>Custom Providers:</strong> Extensible interface for third-party integrations</li>
+        </ul>
+    </div>
+
+    <div class="content-section">
+        <h2>Integration with Canopi</h2>
+        <p>
+            This SDK is designed to work seamlessly with the main canopi application. It emits 
+            canopi-compatible events and follows the established architectural patterns:
+        </p>
+        
+        <ul>
+            <li>Uses canopi ContentAnchor specification</li>
+            <li>Emits CANOPI_SELECTION_CHANGED and CANOPI_ANNOTATION_EVENT events</li>
+            <li>Supports canopi Tab SDK acceptsPageContext contract</li>
+            <li>Compatible with canopi proxy URL handling</li>
+        </ul>
+    </div>
+
+    <div class="content-section">
+        <h2>Getting Started</h2>
+        <p>
+            To integrate the Canopi smart tags system into your application:
+        </p>
+        
+        <pre style="background: #f8f9fa; padding: 12px; border-radius: 4px; overflow-x: auto;"><code>// Import and initialize
+import { SmartTagManager } from '@canopi-sdk/smart-tags';
+import { SelectionOverlay } from '@canopi-sdk/overlays';
+
+// Create smart tag manager
+const smartTags = new SmartTagManager({
+  providers: ['local', 'hypothesis'],
+  syncEnabled: true,
+  autoSave: true
+});
+
+// Initialize selection overlay
+const overlay = new SelectionOverlay({
+  showToolbar: true,
+  enableKeyboardShortcuts: true
+});
+
+// Listen for annotation events
+document.addEventListener('CANOPI_ANNOTATION_REQUEST', (event) => {
+  const { action, selectionData } = event.detail;
+  // Handle annotation request
+});</code></pre>
+    </div>
+
+    <!-- Include the SDK -->
+    <script type="module">
+        // Import SDK components (in real implementation, these would be bundled)
+        // For demo purposes, we'll simulate the functionality
+        
+        class DemoSmartTagManager {
+            constructor(config = {}) {
+                this.config = config;
+                this.annotations = [];
+                this.enabled = true;
+                console.log('Demo SmartTagManager initialized with config:', config);
+            }
+            
+            async createAnnotation(anchor, content, tags = []) {
+                const annotation = {
+                    id: `demo-${Date.now()}`,
+                    anchorId: anchor.id,
+                    content,
+                    tags,
+                    createdAt: Date.now()
+                };
+                
+                this.annotations.push(annotation);
+                console.log('Created annotation:', annotation);
+                
+                // Emit event
+                document.dispatchEvent(new CustomEvent('CANOPI_ANNOTATION_EVENT', {
+                    detail: { type: 'created', annotation }
+                }));
+                
+                return annotation;
+            }
+            
+            getAnnotations() {
+                return this.annotations;
+            }
+            
+            clearAnnotations() {
+                this.annotations = [];
+                console.log('Cleared all annotations');
+            }
+            
+            toggle() {
+                this.enabled = !this.enabled;
+                console.log('Smart tags', this.enabled ? 'enabled' : 'disabled');
+            }
+        }
+        
+        class DemoSelectionOverlay {
+            constructor(config = {}) {
+                this.config = config;
+                this.setupEventListeners();
+                console.log('Demo SelectionOverlay initialized');
+            }
+            
+            setupEventListeners() {
+                document.addEventListener('mouseup', (e) => {
+                    setTimeout(() => {
+                        const selection = window.getSelection();
+                        if (selection && selection.toString().trim().length > 2) {
+                            this.handleSelection(selection);
+                        }
+                    }, 10);
+                });
+            }
+            
+            handleSelection(selection) {
+                const text = selection.toString().trim();
+                console.log('Selection detected:', text);
+                
+                // Emit selection event
+                document.dispatchEvent(new CustomEvent('CANOPI_SELECTION_CHANGED', {
+                    detail: { selection, text, timestamp: Date.now() }
+                }));
+                
+                // Show demo annotation
+                if (confirm(`Create annotation for: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"?`)) {
+                    const anchor = {
+                        id: `anchor-${Date.now()}`,
+                        text: text,
+                        pageUrl: window.location.href,
+                        selector: 'demo-selector'
+                    };
+                    
+                    const content = prompt('Enter annotation content:', '');
+                    if (content) {
+                        window.demoSmartTags.createAnnotation(anchor, content, ['demo']);
+                    }
+                }
+            }
+        }
+        
+        // Initialize demo components
+        window.demoSmartTags = new DemoSmartTagManager({
+            providers: ['local'],
+            syncEnabled: true,
+            autoSave: true
+        });
+        
+        window.demoOverlay = new DemoSelectionOverlay({
+            showToolbar: true,
+            enableKeyboardShortcuts: true
+        });
+        
+        // Update status
+        document.getElementById('status').textContent = 'Smart Tags Active - Select text to annotate!';
+        document.getElementById('status').className = 'status success';
+        
+        // Demo functions
+        window.toggleSmartTags = () => {
+            window.demoSmartTags.toggle();
+            updateStats();
+        };
+        
+        window.clearAnnotations = () => {
+            if (confirm('Clear all annotations?')) {
+                window.demoSmartTags.clearAnnotations();
+                updateStats();
+            }
+        };
+        
+        window.showStats = () => {
+            updateStats();
+        };
+        
+        window.testSelection = () => {
+            alert('Select any text on this page to test the annotation system!');
+        };
+        
+        function updateStats() {
+            const annotations = window.demoSmartTags.getAnnotations();
+            const stats = document.getElementById('stats');
+            stats.innerHTML = `
+                Annotations: ${annotations.length}<br>
+                Status: ${window.demoSmartTags.enabled ? 'Enabled' : 'Disabled'}<br>
+                Last update: ${new Date().toLocaleTimeString()}
+            `;
+        }
+        
+        // Listen for annotation events
+        document.addEventListener('CANOPI_ANNOTATION_EVENT', (event) => {
+            console.log('Annotation event:', event.detail);
+            updateStats();
+        });
+        
+        // Initial stats update
+        updateStats();
+        
+        console.log('Canopi SDK Demo initialized successfully!');
+    </script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+{
+  "name": "@canopi-sdk/studio-kit",
+  "version": "0.2.0",
+  "description": "Canopi Studio: StudioProject schema and validator, component catalogue, sidebar renderers, data sources, mock CanopiTab, module scaffold generator",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./browser": { "types": "./dist/browser.d.ts", "import": "./dist/browser.js" },
+    "./sample-project.json": "./fixtures/sample-project.json"
+  },
+  "files": ["dist", "fixtures", "README.md"],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/bundle.mjs",
+    "type-check": "tsc --noEmit -p tsconfig.json",
+    "gen:runtime": "node scripts/gen-runtime.mjs"
+  },
+  "dependencies": {
+    "@canopi-sdk/manifest": "0.2.0",
+    "@canopi-sdk/tab-bridge": "0.2.0",
+    "ajv": "^8.17.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}

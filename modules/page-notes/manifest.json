@@ -1,0 +1,34 @@
+{
+  "manifestVersion": 2,
+  "kind": "tablication",
+  "id": "live.canopi.page-notes",
+  "name": "Page notes",
+  "version": "1.1.1",
+  "description": "Private notes for the page you are on, and public page notes (the page-note smart tag). Reference tablication for the canopi.tab bridge v1.",
+  "author": {
+    "name": "Canopi",
+    "url": "https://canopi.live"
+  },
+  "permissions": [
+    "page:context",
+    "user:profile",
+    "storage:module",
+    "ui:badge",
+    "tags:compose",
+    "tags:read:page-note"
+  ],
+  "tablication": {
+    "tab": {
+      "id": "page-notes-tab",
+      "title": "Notes",
+      "icon": "📝",
+      "order": 60
+    },
+    "entry": {
+      "html": "index.html"
+    },
+    "contains": [
+      "page-note"
+    ]
+  }
+}

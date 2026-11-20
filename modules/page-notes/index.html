@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Page notes</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <p id="who" class="muted">Connecting to Canopi…</p>
+  <p id="page" class="page"></p>
+  <label for="note">Your note for this page (only you see it)</label>
+  <textarea id="note" rows="8" disabled></textarea>
+  <p id="status" class="muted" aria-live="polite"></p>
+  <button id="share" type="button" disabled>Share as a public page note…</button>
+  <h2>Public notes on this page</h2>
+  <ul id="public" class="public"></ul>
+  <p id="public-status" class="muted" aria-live="polite"></p>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hello page</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <p id="status" class="muted" aria-live="polite">Connecting to Canopi…</p>
+  <h1>You are on</h1>
+  <p id="title" class="page"></p>
+  <p id="url" class="muted url"></p>
+  <button id="remember" type="button" disabled>Remember this page</button>
+  <h2>Remembered page</h2>
+  <p id="remembered" class="muted">Nothing yet.</p>
+</main>
+<!-- No inline scripts: the bundle host's CSP is script-src 'self'. -->
+<script type="module" src="app.js"></script>
+</body>
+</html>

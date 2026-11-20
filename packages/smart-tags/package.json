@@ -1,0 +1,34 @@
+{
+  "name": "@canopi-sdk/smart-tags",
+  "version": "0.2.0",
+  "description": "LEGACY, not loaded by Canopi (see the repo README): Canopi smart tags \u2013 registry, manager and annotation providers",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "type-check": "tsc --noEmit -p tsconfig.json"
+  },
+  "keywords": [
+    "canopi",
+    "smart-tags",
+    "annotations",
+    "hypothesis",
+    "bike-rack",
+    "content-anchoring"
+  ]
+}

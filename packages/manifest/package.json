@@ -1,0 +1,16 @@
+{
+  "name": "@canopi-sdk/manifest",
+  "version": "0.2.0",
+  "description": "Canopi module manifest v2 (smart tags, tablications, overlay apps): JSON Schema, types, validator",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": { ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" } },
+  "files": ["dist", "README.md"],
+  "sideEffects": false,
+  "scripts": { "build": "tsc -p tsconfig.json", "type-check": "tsc --noEmit -p tsconfig.json" },
+  "dependencies": { "ajv": "^8.17.1" }
+}

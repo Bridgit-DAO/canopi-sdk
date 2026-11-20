@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<!-- LEGACY: uses packages Canopi does not load, and imports bare package names with no bundler, so it does not run as-is. See examples/legacy/README.md and modules/ for the current design. -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canopi SDK - Timing-Aware Integration (Wayback Insights)</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .timing-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 16px;
+            max-width: 350px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            font-size: 12px;
+        }
+        
+        .timing-panel h3 {
+            margin: 0 0 12px 0;
+            font-size: 14px;
+            color: #495057;
+        }
+        
+        .timing-status {
+            margin: 8px 0;
+            padding: 6px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+        
+        .timing-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .timing-status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .timing-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .timing-log {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 8px;
+            margin: 8px 0;
+            font-family: monospace;
+            font-size: 10px;
+        }
+        
+        .demo-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+        }
+        
+        .highlight-box {
+            background: #e3f2fd;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #2196f3;
+        }
+        
+        button {
+            margin: 4px;
+            padding: 8px 12px;
+            border: 1px solid #007bff;
+            border-radius: 4px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        button.secondary {
+            background: #6c757d;
+            border-color: #6c757d;
+        }
+        
+        button.danger {
+            background: #dc3545;
+            border-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="timing-panel">
+        <h3>⏱️ Timing Diagnostics</h3>
+        <div id="init-status" class="timing-status">Initializing...</div>
+        <div id="tab-status" class="timing-status">Tab Status: Unknown</div>
+        <div id="page-status" class="timing-status">Page Status: Unknown</div>
+        
+        <div>
+            <button onclick="forceRefresh()">Force Refresh</button>
+            <button onclick="simulateTabChange()" class="secondary">Simulate Tab Change</button>
+            <button onclick="triggerStaleState()" class="danger">Trigger Stale State</button>
+        </div>
+        
+        <div>
+            <button onclick="clearLog()" class="secondary">Clear Log</button>
+            <button onclick="runDiagnostics()">Run Diagnostics</button>
+        </div>
+        
+        <div class="timing-log" id="timing-log"></div>
+    </div>
+
+    <h1>Canopi SDK - Timing-Aware Integration</h1>
+    
+    <div class="highlight-box">
+        <strong>Wayback Machine Insights:</strong> This demo showcases the timing fixes discovered during 
+        Wayback machine development. The SDK now handles stale state, tab switching, and initialization 
+        race conditions that were causing issues.
+    </div>
+
+    <div class="demo-section">
+        <h2>Timing Issues Solved</h2>
+        <p>The Wayback machine work revealed several critical timing issues:</p>
+        
+        <ul>
+            <li><strong>Stale State on Tab Switch:</strong> When users switched tabs, the sidepanel showed stale state because it didn't handle TAB_CHANGED messages</li>
+            <li><strong>Race Conditions:</strong> Components initialized in wrong order causing dependency failures</li>
+            <li><strong>Missing Refresh Logic:</strong> No mechanism to detect and fix stale state automatically</li>
+            <li><strong>Event Timing:</strong> Events fired before listeners were ready</li>
+        </ul>
+    </div>
+
+    <div class="demo-section">
+        <h2>Solutions Implemented</h2>
+        
+        <h3>1. TabController with TAB_CHANGED Handler</h3>
+        <p>Critical fix: Sidepanel now listens for <code>chrome.runtime.onMessage</code> TAB_CHANGED events and calls <code>refreshFromActiveTab()</code></p>
+        
+        <h3>2. Timing-Aware Initialization</h3>
+        <p>SDK components initialize in proper dependency order with retry logic and health checks</p>
+        
+        <h3>3. Stale State Detection</h3>
+        <p>Periodic health checks detect when components have stale URLs and automatically refresh</p>
+        
+        <h3>4. Event Synchronization</h3>
+        <p>Debounced and throttled event handlers prevent rapid-fire timing issues</p>
+    </div>
+
+    <div class="demo-section">
+        <h2>Test Scenarios</h2>
+        <p>Use the timing panel controls to test various scenarios:</p>
+        
+        <ul>
+            <li><strong>Force Refresh:</strong> Manually refresh all SDK components</li>
+            <li><strong>Simulate Tab Change:</strong> Trigger a TAB_CHANGED event to test handling</li>
+            <li><strong>Trigger Stale State:</strong> Force components into stale state to test recovery</li>
+            <li><strong>Run Diagnostics:</strong> Check current state of all components</li>
+        </ul>
+    </div>
+
+    <div class="demo-section">
+        <h2>Integration Code</h2>
+        <pre style="background: #f8f9fa; padding: 12px; border-radius: 4px; overflow-x: auto;"><code>// Timing-aware SDK initialization
+import { initializeSidebarSDK, TimingUtils } from '@canopi-sdk/sidebar-sdk';
+
+// Initialize with retry logic and health checks
+const components = await TimingUtils.safeInitialize(
+  () => initializeSidebarSDK({
+    enableTabController: true,
+    enableMessageListeners: true,
+    retryAttempts: 3,
+    initializationDelay: 100
+  }),
+  {
+    maxAttempts: 3,
+    baseDelay: 200,
+    initDelay: 100
+  }
+);
+
+// Listen for timing events
+document.addEventListener('CANOPI_SDK_TAB_CHANGED', (event) => {
+  console.log('Tab changed, components refreshed:', event.detail);
+});
+
+// Periodic health check
+setInterval(() => {
+  components.tabController?.forceRefresh();
+}, 30000);</code></pre>
+    </div>
+
+    <script type="module">
+        // Simulate the timing-aware SDK functionality
+        
+        class TimingAwareSDK {
+            constructor() {
+                this.initialized = false;
+                this.components = {};
+                this.log = [];
+                this.staleCheckInterval = null;
+                
+                this.initialize();
+            }
+            
+            async initialize() {
+                this.addLog('🚀 Starting timing-aware initialization...');
+                
+                try {
+                    // Simulate DOM ready wait
+                    await this.waitForDOMReady();
+                    this.addLog('✅ DOM ready');
+                    
+                    // Simulate component initialization with retry
+                    await this.initializeWithRetry();
+                    this.addLog('✅ Components initialized');
+                    
+                    // Setup timing safeguards
+                    this.setupTimingSafeguards();
+                    this.addLog('✅ Timing safeguards active');
+                    
+                    // Setup health checks
+                    this.setupHealthChecks();
+                    this.addLog('✅ Health checks started');
+                    
+                    this.initialized = true;
+                    this.updateStatus('init-status', 'SDK Initialized', 'success');
+                    this.addLog('🎉 SDK initialization complete');
+                    
+                } catch (error) {
+                    this.addLog(`❌ Initialization failed: ${error.message}`);
+                    this.updateStatus('init-status', 'Initialization Failed', 'error');
+                }
+            }
+            
+            async waitForDOMReady() {
+                return new Promise(resolve => {
+                    if (document.readyState === 'complete') {
+                        resolve();
+                    } else {
+                        document.addEventListener('DOMContentLoaded', resolve, { once: true });
+                    }
+                });
+            }
+            
+            async initializeWithRetry() {
+                const maxAttempts = 3;
+                let attempt = 1;
+                
+                while (attempt <= maxAttempts) {
+                    try {
+                        await this.initializeComponents();
+                        return;
+                    } catch (error) {
+                        this.addLog(`⚠️ Attempt ${attempt} failed: ${error.message}`);
+                        if (attempt === maxAttempts) throw error;
+                        
+                        await this.delay(200 * attempt); // Exponential backoff
+                        attempt++;
+                    }
+                }
+            }
+            
+            async initializeComponents() {
+                // Simulate component initialization
+                this.components.canonicalUrlService = { 
+                    getCanonicalUrl: (url) => url,
+                    lastUpdate: Date.now()
+                };
+                
+                await this.delay(50);
+                
+                this.components.pageContextManager = {
+                    currentUrl: window.location.href,
+                    lastUpdate: Date.now(),
+                    refresh: () => {
+                        this.components.pageContextManager.currentUrl = window.location.href;
+                        this.components.pageContextManager.lastUpdate = Date.now();
+                        this.addLog('📄 Page context refreshed');
+                    }
+                };
+                
+                await this.delay(50);
+                
+                this.components.tabController = {
+                    currentTabData: {
+                        url: window.location.href,
+                        title: document.title,
+                        lastUpdate: Date.now()
+                    },
+                    refreshFromActiveTab: () => {
+                        this.components.tabController.currentTabData = {
+                            url: window.location.href,
+                            title: document.title,
+                            lastUpdate: Date.now()
+                        };
+                        this.addLog('🔄 Tab controller refreshed from active tab');
+                    }
+                };
+            }
+            
+            setupTimingSafeguards() {
+                // Listen for tab change events
+                document.addEventListener('CANOPI_TAB_CHANGED', (event) => {
+                    this.handleTabChanged(event.detail);
+                });
+                
+                // Listen for page navigation
+                let lastUrl = window.location.href;
+                setInterval(() => {
+                    if (window.location.href !== lastUrl) {
+                        lastUrl = window.location.href;
+                        this.handlePageNavigation();
+                    }
+                }, 1000);
+            }
+            
+            setupHealthChecks() {
+                this.staleCheckInterval = setInterval(() => {
+                    this.performHealthCheck();
+                }, 30000); // Every 30 seconds
+            }
+            
+            handleTabChanged(detail) {
+                this.addLog('🔄 TAB_CHANGED event received');
+                
+                // Critical fix: refresh from active tab to prevent stale state
+                if (this.components.tabController) {
+                    this.components.tabController.refreshFromActiveTab();
+                }
+                
+                if (this.components.pageContextManager) {
+                    this.components.pageContextManager.refresh();
+                }
+                
+                this.updateStatus('tab-status', 'Tab Changed - Refreshed', 'success');
+            }
+            
+            handlePageNavigation() {
+                this.addLog('🌐 Page navigation detected');
+                this.forceRefreshAll();
+            }
+            
+            performHealthCheck() {
+                const now = Date.now();
+                let staleComponents = [];
+                
+                // Check for stale components (older than 60 seconds)
+                Object.entries(this.components).forEach(([name, component]) => {
+                    if (component.lastUpdate && (now - component.lastUpdate) > 60000) {
+                        staleComponents.push(name);
+                    }
+                });
+                
+                if (staleComponents.length > 0) {
+                    this.addLog(`⚠️ Stale components detected: ${staleComponents.join(', ')}`);
+                    this.forceRefreshAll();
+                } else {
+                    this.updateStatus('page-status', 'Components Fresh', 'success');
+                }
+            }
+            
+            forceRefreshAll() {
+                this.addLog('🔄 Force refreshing all components...');
+                
+                if (this.components.pageContextManager) {
+                    this.components.pageContextManager.refresh();
+                }
+                
+                if (this.components.tabController) {
+                    this.components.tabController.refreshFromActiveTab();
+                }
+                
+                this.updateStatus('tab-status', 'Force Refreshed', 'success');
+                this.updateStatus('page-status', 'Force Refreshed', 'success');
+            }
+            
+            simulateTabChange() {
+                this.addLog('🎭 Simulating TAB_CHANGED event...');
+                
+                const event = new CustomEvent('CANOPI_TAB_CHANGED', {
+                    detail: {
+                        tabId: Math.floor(Math.random() * 1000),
+                        url: window.location.href,
+                        timestamp: Date.now()
+                    }
+                });
+                
+                document.dispatchEvent(event);
+            }
+            
+            triggerStaleState() {
+                this.addLog('⚠️ Triggering stale state...');
+                
+                // Make components appear stale
+                Object.values(this.components).forEach(component => {
+                    if (component.lastUpdate) {
+                        component.lastUpdate = Date.now() - 120000; // 2 minutes ago
+                    }
+                });
+                
+                this.updateStatus('tab-status', 'Stale State Triggered', 'warning');
+                this.updateStatus('page-status', 'Stale State Triggered', 'warning');
+            }
+            
+            runDiagnostics() {
+                this.addLog('🔍 Running diagnostics...');
+                
+                const diagnostics = {
+                    initialized: this.initialized,
+                    componentCount: Object.keys(this.components).length,
+                    currentUrl: window.location.href,
+                    timestamp: new Date().toISOString()
+                };
+                
+                Object.entries(this.components).forEach(([name, component]) => {
+                    const age = component.lastUpdate ? Date.now() - component.lastUpdate : 'unknown';
+                    this.addLog(`📊 ${name}: age=${age}ms`);
+                });
+                
+                this.addLog(`📊 Diagnostics: ${JSON.stringify(diagnostics, null, 2)}`);
+            }
+            
+            addLog(message) {
+                const timestamp = new Date().toLocaleTimeString();
+                this.log.push(`[${timestamp}] ${message}`);
+                
+                // Keep only last 50 entries
+                if (this.log.length > 50) {
+                    this.log = this.log.slice(-50);
+                }
+                
+                this.updateLogDisplay();
+            }
+            
+            updateLogDisplay() {
+                const logElement = document.getElementById('timing-log');
+                if (logElement) {
+                    logElement.innerHTML = this.log.join('\n');
+                    logElement.scrollTop = logElement.scrollHeight;
+                }
+            }
+            
+            updateStatus(elementId, message, type) {
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.textContent = message;
+                    element.className = `timing-status ${type}`;
+                }
+            }
+            
+            clearLog() {
+                this.log = [];
+                this.updateLogDisplay();
+            }
+            
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        }
+        
+        // Initialize the timing-aware SDK
+        const sdk = new TimingAwareSDK();
+        
+        // Make functions available globally
+        window.forceRefresh = () => sdk.forceRefreshAll();
+        window.simulateTabChange = () => sdk.simulateTabChange();
+        window.triggerStaleState = () => sdk.triggerStaleState();
+        window.runDiagnostics = () => sdk.runDiagnostics();
+        window.clearLog = () => sdk.clearLog();
+        
+        // Make SDK available for debugging
+        window.TimingAwareSDK = sdk;
+        
+        console.log('Timing-aware Canopi SDK demo loaded');
+    </script>
+</body>
+</html>

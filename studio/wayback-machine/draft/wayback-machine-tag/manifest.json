@@ -1,0 +1,115 @@
+{
+  "manifestVersion": 2,
+  "kind": "smart-tag",
+  "id": "studio.wayback-machine.tag",
+  "name": "Archived citation",
+  "version": "0.1.0",
+  "description": "Open the Wayback tab on any page and see straight away whether the Internet Archive has it: the latest capture, the first capture, and how often it has been saved over the years, each one link away. Select a claim and attach the archived copy that backs it. Everyone who reads the page later sees the citation pill, and the evidence still opens when the original link has rotted.",
+  "author": {
+    "name": "canopi-studio skill trial"
+  },
+  "triggers": [
+    {
+      "type": "selection",
+      "minChars": 20
+    },
+    {
+      "type": "link"
+    }
+  ],
+  "smartTag": {
+    "tagType": "archived-citation",
+    "emoji": "🏛️",
+    "label": "Archived citation",
+    "tier": "composer",
+    "statusMode": "basic",
+    "payloadSchema": {
+      "type": "object",
+      "required": [
+        "archiveUrl",
+        "status",
+        "note"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "archiveUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 500
+        },
+        "originalUrl": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 500
+        },
+        "capturedAt": {
+          "type": "string",
+          "maxLength": 14,
+          "description": "Wayback timestamp, YYYYMMDDhhmmss"
+        },
+        "status": {
+          "enum": [
+            "live",
+            "changed",
+            "gone"
+          ],
+          "x-canopi-index": "enum"
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        }
+      }
+    },
+    "summary": "Archived ({{status}}): {{note}}",
+    "presentation": {
+      "pill": {
+        "emoji": "🏛️",
+        "label": "Archived",
+        "metric": {
+          "type": "field",
+          "field": "status"
+        }
+      },
+      "popovers": [
+        {
+          "trigger": "hover",
+          "title": "Archived citation",
+          "body": [
+            {
+              "type": "badge",
+              "field": "status"
+            },
+            {
+              "type": "text",
+              "field": "note",
+              "label": "Why it matters"
+            },
+            {
+              "type": "link",
+              "field": "archiveUrl",
+              "label": "Open the archived copy"
+            },
+            {
+              "type": "kv",
+              "fields": [
+                "originalUrl",
+                "capturedAt"
+              ]
+            },
+            {
+              "type": "author"
+            }
+          ]
+        }
+      ],
+      "onClick": "openTablication"
+    },
+    "surfaces": {
+      "discuss": "inline",
+      "home": "studio.wayback-machine.tab",
+      "composer": "both"
+    }
+  }
+}

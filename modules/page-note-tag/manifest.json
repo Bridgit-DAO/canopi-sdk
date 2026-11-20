@@ -1,0 +1,41 @@
+{
+  "manifestVersion": 2,
+  "kind": "smart-tag",
+  "id": "live.canopi.page-note-tag",
+  "name": "Page note",
+  "version": "1.0.0",
+  "description": "A short public note on a page: a note, a question or a correction. Reference declarative smart tag.",
+  "author": { "name": "Canopi", "url": "https://canopi.live" },
+  "triggers": [{ "type": "page" }],
+  "smartTag": {
+    "tagType": "page-note",
+    "emoji": "📝",
+    "label": "Page note",
+    "tier": "composer",
+    "statusMode": "coordinated",
+    "payloadSchema": {
+      "type": "object",
+      "required": ["note", "kind"],
+      "additionalProperties": false,
+      "properties": {
+        "note": { "type": "string", "minLength": 1, "maxLength": 1000 },
+        "kind": { "enum": ["note", "question", "correction"], "x-canopi-index": "enum" },
+        "source": { "type": "string", "format": "uri", "maxLength": 500 }
+      }
+    },
+    "summary": "{{note}}",
+    "form": {
+      "order": ["kind", "note", "source"],
+      "labels": { "note": "Note", "kind": "Kind", "source": "Source link" },
+      "hints": { "source": "Optional. http(s) only." }
+    },
+    "presentation": {
+      "pill": { "emoji": "📝", "label": "Page note", "metric": { "type": "field", "field": "kind" } },
+      "popovers": [
+        { "trigger": "hover", "title": "Note", "body": [{ "type": "text", "field": "note" }, { "type": "link", "field": "source", "label": "Source" }] }
+      ],
+      "onClick": "openFocus"
+    },
+    "surfaces": { "discuss": "inline", "home": "live.canopi.page-notes", "composer": "both" }
+  }
+}
