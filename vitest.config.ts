@@ -13,6 +13,6 @@ export default defineConfig({
   },
   test: {
     environment: 'happy-dom',
-    include: ['packages/*/src/**/*.test.ts', 'tests/**/*.test.ts', '.claude/skills/*/scripts/**/*.test.ts'],
+    include: ['packages/*/src/**/*.test.ts', 'packages/*/test/**/*.test.ts', 'tests/**/*.test.ts', '.claude/skills/*/scripts/**/*.test.ts'],
   },
 });

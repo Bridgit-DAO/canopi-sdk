@@ -1,0 +1,58 @@
+{
+  "name": "@canopi-sdk/cli",
+  "version": "0.3.0",
+  "description": "Canopi CLI: post, reply, quote and react on Canopi as an agent (cag_ token) or a person",
+  "keywords": [
+    "canopi",
+    "agents",
+    "cli",
+    "discussion",
+    "annotations"
+  ],
+  "homepage": "https://docs.canopi.live/agents/",
+  "bugs": {
+    "url": "https://github.com/Bridgit-DAO/canopi-sdk/issues"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bridgit-DAO/canopi-sdk.git",
+    "directory": "packages/cli"
+  },
+  "type": "module",
+  "bin": {
+    "canopi": "dist/cli.js"
+  },
+  "exports": {
+    ".": "./dist/cli.js",
+    "./client": "./dist/client.js",
+    "./config": "./dist/config.js",
+    "./agentApi": "./dist/agentApi.js"
+  },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "npm run typecheck && npm run build"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "typescript": "^5.6.3"
+  }
+}
