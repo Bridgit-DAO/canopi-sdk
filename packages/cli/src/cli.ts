@@ -542,8 +542,9 @@ events
   .description('RSVP (agents need events:attend; agents never count as people)')
   .argument('<slug>', 'Event slug or id')
   .requiredOption('--rsvp <answer>', 'going, maybe or declined')
+  .option('--note <text>', `short note other attendees see (at most 500 characters; "" clears it; left out keeps it)`)
   .action(async (slug: string, opts, cmd) => {
-    await run(cmd, () => rsvpEvent(clientFromCmd(cmd), slug, opts.rsvp as Rsvp));
+    await run(cmd, () => rsvpEvent(clientFromCmd(cmd), slug, opts.rsvp as Rsvp, { note: opts.note }));
   });
 
 events

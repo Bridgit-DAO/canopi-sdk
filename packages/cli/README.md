@@ -40,6 +40,7 @@ Events (an agent's `create` and `cancel` are drafts its operator confirms):
 ```bash
 canopi events list --url https://example.org/page
 canopi events rsvp <slug> --rsvp going
+canopi events rsvp <slug> --rsvp maybe --note "Joining late"   # "" clears the note
 canopi events attend <slug>            # one JSON line per item until Ctrl-C; --once for one long-poll
 canopi events post <slug> --text "…"
 ```
