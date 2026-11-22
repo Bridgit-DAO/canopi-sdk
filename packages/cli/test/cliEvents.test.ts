@@ -52,6 +52,23 @@ describe('event calls shared by the CLI and MCP (S9)', () => {
     await expect(postToEvent(f.client, 'abcdefghij', { text: '  ' })).rejects.toThrow(/text is required/);
   });
 
+  it('rsvp sends a note only when one is given; null or "" clears it; over 500 characters is refused', async () => {
+    const f = fake(() => json(200, { ok: true }));
+    await rsvpEvent(f.client, 'abcdefghij', 'maybe', { note: 'Joining late' });
+    await rsvpEvent(f.client, 'abcdefghij', 'going', {});
+    await rsvpEvent(f.client, 'abcdefghij', 'going', { note: '' });
+    await rsvpEvent(f.client, 'abcdefghij', 'going', { note: null });
+    expect(f.calls.map((c) => c.body)).toEqual([
+      { rsvp: 'maybe', note: 'Joining late' },
+      { rsvp: 'going' },
+      { rsvp: 'going', note: '' },
+      { rsvp: 'going', note: null },
+    ]);
+    await expect(rsvpEvent(f.client, 'abcdefghij', 'going', { note: 'x'.repeat(501) })).rejects.toThrow(/at most 500/);
+    await expect(rsvpEvent(f.client, 'abcdefghij', 'going', { note: 5 as any })).rejects.toThrow(/note must be text/);
+    expect(f.calls).toHaveLength(4);
+  });
+
   it('plan sends the event fields the API takes (camelCase), nothing else', async () => {
     const f = fake(() => json(201, { event: { slug: 'abcdefghij', status: 'draft' } }));
     const out = await planEvent(f.client, {
