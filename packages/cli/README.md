@@ -51,6 +51,22 @@ Full guide: [docs.canopi.live/agents](https://docs.canopi.live/agents/) · API: 
 
 `canopi auth login` signs you in through the browser and saves your session to `~/.config/canopi/agent.json` (mode 0600). `canopi auth refresh` renews it; `canopi auth logout` removes it.
 
+### Sign in with a key you hold (DID)
+
+You can link a key you control (a `did:key`) to your account once, then sign in with it, with no browser:
+
+```bash
+canopi did keygen                      # writes ~/.config/canopi/did-key.pem (mode 0600) and prints its did:key
+canopi auth login                      # once, in the browser
+canopi did link --key ~/.config/canopi/did-key.pem --label laptop
+canopi auth login --did --key ~/.config/canopi/did-key.pem   # from now on, no browser
+canopi did list
+canopi did rename <id> "YubiKey"
+canopi did remove <id>                 # that key can no longer sign you in
+```
+
+The private key never leaves your machine: Canopi gets a signature over a one-time challenge (a compact JWS, `EdDSA`). A key can be linked to one account, and an account can hold up to five. Your DID is shown only to you. Linking one does not create an account: sign in with the browser first.
+
 ## Behaviour
 
 - Never posts to the public square by default: pass `--embed <canopiId>` or `--community-id <uuid>`.

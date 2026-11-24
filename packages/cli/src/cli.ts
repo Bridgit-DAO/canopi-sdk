@@ -23,6 +23,7 @@ import {
   type Rsvp,
 } from './agentApi.js';
 import { operatorApi } from './operatorApi.js';
+import { fileSigner, keygen, linkDid, listDids, removeDid, renameDid, signInWithDid } from './did.js';
 import {
   clearConfig,
   configFileHint,
@@ -91,17 +92,36 @@ program
     });
   });
 
-const auth = program.command('auth').description('Web3Auth login and token refresh');
+const auth = program.command('auth').description('Sign in (Web3Auth in a browser, or a linked DID key) and token refresh');
 
 auth
   .command('login')
-  .description('Sign in via browser Web3Auth; saves embed token to ~/.config/canopi/agent.json')
+  .description('Sign in via browser Web3Auth, or with a linked DID key (--did --key); saves embed token to ~/.config/canopi/agent.json')
   .option('--no-open', 'Print login URL instead of opening a browser')
   .option('--timeout <sec>', 'Seconds to wait for browser sign-in', '120')
+  .option('--did', 'Sign in with a DID key you linked (canopi did link); no browser')
+  .option('--key <file>', 'Ed25519 key file for --did (made by canopi did keygen)')
   .action(async (opts, cmd) => {
     const pretty = prettyFromCmd(cmd);
     const root = cmd.optsWithGlobals();
     const baseUrl = loadConfig({ baseUrl: root.baseUrl }).baseUrl;
+    if (opts.did) {
+      try {
+        if (!opts.key) throw new Error('--did needs --key <file>');
+        const signer = fileSigner(String(opts.key));
+        const result = await signInWithDid(new CanopiClient({ baseUrl }), signer);
+        const userName = result.user.displayName ?? result.user.name ?? undefined;
+        const userHandle = result.user.handle ?? undefined;
+        const configFile = saveConfig({ baseUrl, token: result.embedToken, userId: result.user.id, userName, userHandle });
+        printJson(
+          { ok: true, via: 'did', did: signer.did, userId: result.user.id, userName: userName ?? null, userHandle: userHandle ?? null, token: maskToken(result.embedToken), configFile },
+          pretty,
+        );
+      } catch (err) {
+        fail(err instanceof Error ? err.message : String(err), pretty);
+      }
+      return;
+    }
     try {
       const result = await loginViaWeb3AuthRelay({
         baseUrl,
@@ -193,6 +213,51 @@ auth
       const configFile = saveConfig({ baseUrl, token });
       return { ok: true, token: maskToken(token), configFile };
     });
+  });
+
+const did = program
+  .command('did')
+  .description('DID keys that can sign you in (/api/auth/did): make one, link it to your account, list, rename, remove');
+
+did
+  .command('keygen')
+  .description('Make an Ed25519 key file (mode 0600) and print its did:key. The key never leaves this machine')
+  .option('--out <file>', 'Where to write the key', `${process.env.HOME || '.'}/.config/canopi/did-key.pem`)
+  .action(async (opts, cmd) => {
+    await run(cmd, async () => ({ ok: true, ...keygen(String(opts.out)) }));
+  });
+
+did
+  .command('link')
+  .description('Link a key to the account you are signed in as (canopi auth login first)')
+  .requiredOption('--key <file>', 'Ed25519 key file (made by canopi did keygen)')
+  .option('--label <text>', 'A name for this key, up to 40 characters (e.g. laptop)')
+  .action(async (opts, cmd) => {
+    await run(cmd, async () => ({ ok: true, did: await linkDid(clientFromCmd(cmd), fileSigner(String(opts.key)), opts.label) }));
+  });
+
+did
+  .command('list')
+  .description('Your linked DIDs')
+  .action(async (_opts, cmd) => {
+    await run(cmd, async () => ({ dids: await listDids(clientFromCmd(cmd)) }));
+  });
+
+did
+  .command('rename')
+  .description('Rename a linked DID')
+  .argument('<id>', 'Linked DID id (from canopi did list)')
+  .argument('<label>', 'New name, up to 40 characters')
+  .action(async (id, label, _opts, cmd) => {
+    await run(cmd, async () => ({ ok: true, did: await renameDid(clientFromCmd(cmd), String(id), String(label)) }));
+  });
+
+did
+  .command('remove')
+  .description('Remove a linked DID; it can no longer sign you in')
+  .argument('<id>', 'Linked DID id (from canopi did list)')
+  .action(async (id, _opts, cmd) => {
+    await run(cmd, async () => ({ ok: true, ...(await removeDid(clientFromCmd(cmd), String(id))) }));
   });
 
 const agent = program
