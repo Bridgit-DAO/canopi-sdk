@@ -1,6 +1,6 @@
 # @canopi-sdk/sidebar-sdk
 
-> **Legacy: not loaded by Canopi.** This package is from an earlier SDK design. The Canopi extension today loads modules through the module manifest v2 (`@canopi-sdk/manifest`) and the sandboxed `canopi.tab` bridge (`@canopi-sdk/tab-bridge`); see [`modules/`](../../modules/) and the [repo README](../../README.md#legacy-packages). The code is kept for reference and still builds and type-checks in CI.
+> **Legacy: not loaded by Canopi.** This package is from an earlier SDK design. The Canopi extension today loads modules through the module manifest v2 (`@canopi-sdk/manifest`) and the sandboxed `canopi.tab` bridge (`@canopi-sdk/tab-bridge`); see [`modules/`](../../modules/) and the [repo README](../../docs/LEGACY.md). The code is kept for reference and still builds and type-checks in CI.
 
 Client helpers for **Canopi Sidebar Tab SDK** modules: page context, tab coordination, canonical URL normalization, timing-safe initialization.
 
